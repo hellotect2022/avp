@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.smartcc.avp.pc.orderlist.dao.OrderlistDAO">
+
+	<select id="getOrderlistListCount" resultType="int">
+		SELECT
+			count(*)
+		FROM
+			`AVP`.`AVP_ORDERLIST_TB`
+		WHERE
+			COMPANY_ID = #{companyId}
+		AND
+			(DEL_YN	=	'N'	OR	DEL_YN	is	NULL)
+		<if test="branchId != null">
+			AND
+				BRANCH_ID	=	#{branchId}
+		</if>
+	</select>
+
+	<select id="getOrderlistList" resultType="com.smartcc.avp.pc.orderlist.model.Orderlist">
+		SELECT
+			IDX		as orderlistId,
+		    COMPANY_ID	as companyId,
+		    BRANCH_ID	as	branchId,
+		    ORDERLIST_NM	as	orderlistName,
+		    date_format(START_DT, '%Y-%m-%d')	as startDt,
+		    date_format(END_DT, '%Y-%m-%d')	as endDt,
+		    DEVICE_ID	as	deviceId,
+		    (SELECT DEVICE_NM FROM `AVP`.`AVP_DEVICE_TB` ADT WHERE ADT.IDX = AOT.DEVICE_ID AND (DEL_YN = 'N' or DEL_YN is NULL)) as deviceName,
+		    ITEM_IDS	as	itemIds,
+		    QUANTITIES as quantities,
+		    SUCCESS_YN	as	successYn,
+		    WORK_RATE	as	workRate,
+		    DEL_ID	as	delId,
+		    DEL_YN	as	delYn,
+		    CREATE_ID	as	createId,
+		    (
+		        SELECT
+		        	NICK_NAME
+		        FROM
+		        	`AVP`.`AVP_USER_TB` AUT
+		        WHERE
+		        	AUT.IDX = AOT.CREATE_ID
+	        )								as	createUser,
+		    DATE_FORMAT(CREATE_DTTM,'%Y-%m-%d %H:%i:%s') as	createDttm,
+		    UPDATE_ID	as	updateId,
+		    (
+		        SELECT
+			        NICK_NAME
+		        FROM
+			        `AVP`.`AVP_USER_TB` AUT
+		        WHERE
+		        	AUT.IDX = AOT.UPDATE_ID
+	        )								as	updateUser,
+		    DATE_FORMAT(UPDATE_DTTM,'%Y-%m-%d %H:%i:%s') as	updateDttm
+		FROM
+			`AVP`.`AVP_ORDERLIST_TB` AOT
+		WHERE 
+			COMPANY_ID	=	#{companyId}
+		AND
+			(DEL_YN = 'N' OR DEL_YN is NULL)
+		<if test="branchId != null">
+			AND
+				BRANCH_ID	=	#{branchId}
+		</if>
+		ORDER BY
+			UPDATE_DTTM DESC
+		<if test="pageInfo != null">
+			LIMIT	#{pageInfo.startRowNum},	#{pageInfo.size}
+		</if>
+	</select>
+
+	<select id="getOrderlist" resultType="com.smartcc.avp.pc.orderlist.model.Orderlist">
+		SELECT
+			IDX		as orderlistId,
+		    COMPANY_ID	as companyId,
+		    BRANCH_ID	as	branchId,
+		    ORDERLIST_NM	as	orderlistName,
+		    date_format(START_DT, '%Y-%m-%d')	as startDt,
+		    date_format(END_DT, '%Y-%m-%d')	as endDt,
+		    DEVICE_ID	as	deviceId,
+		    (SELECT DEVICE_NM FROM `AVP`.`AVP_DEVICE_TB` ADT WHERE ADT.IDX = AOT.DEVICE_ID AND (DEL_YN = 'N' or DEL_YN is NULL)) as deviceName,
+		    ITEM_IDS	as	itemIds,
+		    QUANTITIES as quantities,
+		    SUCCESS_YN	as	successYn,
+		    WORK_RATE	as	workRate,
+		    DEL_ID	as	delId,
+		    DEL_YN	as	delYn,
+		    CREATE_ID	as	createId,
+		    (
+		        SELECT
+		        	NICK_NAME
+		        FROM
+		        	`AVP`.`AVP_USER_TB` AUT
+		        WHERE
+		        	AUT.IDX = AOT.CREATE_ID
+	        )								as	createUser,
+		    DATE_FORMAT(CREATE_DTTM,'%Y-%m-%d %H:%i:%s') as	createDttm,
+		    UPDATE_ID	as	updateId,
+		    (
+		        SELECT
+			        NICK_NAME
+		        FROM
+			        `AVP`.`AVP_USER_TB` AUT
+		        WHERE
+		        	AUT.IDX = AOT.UPDATE_ID
+	        )								as	updateUser,
+		    DATE_FORMAT(UPDATE_DTTM,'%Y-%m-%d %H:%i:%s') as	updateDttm
+		FROM
+			`AVP`.`AVP_ORDERLIST_TB` AOT
+		WHERE 
+			IDX	=	#{orderlistId}
+		AND
+			(DEL_YN = 'N' OR DEL_YN is NULL)
+		ORDER BY
+			UPDATE_DTTM DESC
+	</select>
+
+	<insert id="insertOrderlist" useGeneratedKeys="true">
+	INSERT INTO `AVP`.`AVP_ORDERLIST_TB`
+		(
+			COMPANY_ID,
+			BRANCH_ID,
+			ORDERLIST_NM,
+			START_DT,
+			END_DT,
+			DEVICE_ID,
+			SUCCESS_YN,
+			WORK_RATE,
+			ITEM_IDS,
+			QUANTITIES,
+			CREATE_ID,
+			UPDATE_ID,
+			UPDATE_DTTM
+		)
+	VALUES
+		(
+			#{orderlistInsert.companyId},
+			#{orderlistInsert.branchId},
+			#{orderlistInsert.orderlistName},
+			#{orderlistInsert.startDt},
+			#{orderlistInsert.endDt},
+			#{orderlistInsert.deviceId},
+			'N',
+			0,
+			#{orderlistInsert.itemIds},
+			#{orderlistInsert.quantities},
+			#{orderlistInsert.createId},
+			#{orderlistInsert.createId},
+			DATE_FORMAT(NOW(),'%Y%m%d%H%i%s')
+		)
+	</insert>
+	
+	<insert id="insertOrderProcessComp" useGeneratedKeys="true">
+	INSERT INTO `AVP`.`AVP_ORDER_PROCESS_COMP_TB`
+		(
+			ORDERLIST_ID,
+			ITEM_ID,
+			DEVICE_ID
+		)
+	VALUES
+		(
+			#{orderProcessCompInsert.orderListId},
+			#{orderProcessCompInsert.itemId},
+			(SELECT IDX FROM `AVP`.`AVP_DEVICE_TB` ADT WHERE ADT.SERIAL = #{orderProcessCompInsert.serial})
+		)
+	</insert>
+	
+	<update id="updateOrderlist">
+		UPDATE `AVP`.`AVP_ORDERLIST_TB`	set
+				ORDERLIST_NM	=	#{orderlistUpdate.orderlistName},
+				START_DT		=	#{orderlistUpdate.startDt},
+				END_DT			=	#{orderlistUpdate.endDt},
+				DEVICE_ID		=	#{orderlistUpdate.deviceId},
+				ITEM_IDS		=	#{orderlistUpdate.itemIds},
+				QUANTITIES		=	#{orderlistUpdate.quantities},
+				UPDATE_ID		=	#{orderlistUpdate.updateId},
+				UPDATE_DTTM		=	DATE_FORMAT(NOW(),'%Y%m%d%H%i%s')
+		WHERE 	IDX				=	#{orderlistUpdate.orderlistId}
+	</update>
+	
+	<update id="updateOrderlistWorkRate">
+		UPDATE `AVP`.`AVP_ORDERLIST_TB`	set
+				WORK_RATE		=	#{orderlistUpdate.workRate},
+				SUCCESS_YN		=	#{orderlistUpdate.successYn}
+		WHERE 	IDX				=	#{orderlistUpdate.orderlistId}
+	</update>
+	
+	<update id="deleteOrderlist">
+		UPDATE `AVP`.`AVP_ORDERLIST_TB`	set
+				DEL_ID	=	#{userId},
+				DEL_YN	=	'Y'
+		WHERE 	IDX		=	#{orderlistId}
+	</update>
+
+	<select id="getIntfcOrderlistList" resultType="com.smartcc.avp.pc.orderlist.model.Orderlist">
+		SELECT
+			IDX		as orderlistId,
+		    COMPANY_ID	as companyId,
+		    BRANCH_ID	as	branchId,
+		    ORDERLIST_NM	as	orderlistName,
+		    date_format(START_DT, '%Y-%m-%d')	as startDt,
+		    date_format(END_DT, '%Y-%m-%d')	as endDt,
+		    DEVICE_ID	as	deviceId,
+		    (SELECT DEVICE_NM FROM `AVP`.`AVP_DEVICE_TB` ADT WHERE ADT.IDX = AOT.DEVICE_ID AND (DEL_YN = 'N' or DEL_YN is NULL)) as deviceName,
+		    ITEM_IDS	as	itemIds,
+		    QUANTITIES as quantities,
+		    SUCCESS_YN	as	successYn,
+		    WORK_RATE	as	workRate,
+		    DEL_ID	as	delId,
+		    DEL_YN	as	delYn,
+		    DATE_FORMAT(UPDATE_DTTM,'%Y-%m-%d %H:%i:%s') as	updateDttm
+		FROM
+			`AVP`.`AVP_ORDERLIST_TB` AOT
+		WHERE 
+			DEVICE_ID = (SELECT IDX FROM `AVP`.`AVP_DEVICE_TB` ADT WHERE ADT.SERIAL = #{serial} AND (DEL_YN = 'N' or DEL_YN is NULL))
+		AND
+			(DEL_YN = 'N' OR DEL_YN is NULL)
+		AND
+			SUCCESS_YN = 'N'
+		ORDER BY
+			CREATE_DTTM ASC
+		LIMIT 1
+	</select>
+
+	<select id="getOrderProcessComp" resultType="int">
+		SELECT
+			ITEM_ID
+		FROM
+			`AVP`.`AVP_ORDER_PROCESS_COMP_TB`
+		WHERE 
+			ORDERLIST_ID	=	#{orderListId}
+	</select>
+	
+	<select id="getTodayOrderlistList" resultType="com.smartcc.avp.pc.orderlist.model.Orderlist">
+		SELECT
+			IDX		as orderlistId,
+		    COMPANY_ID	as companyId,
+		    BRANCH_ID	as	branchId,
+		    ORDERLIST_NM	as	orderlistName,
+		    date_format(START_DT, '%Y-%m-%d')	as startDt,
+		    date_format(END_DT, '%Y-%m-%d')	as endDt,
+		    DEVICE_ID	as	deviceId,
+		    (SELECT DEVICE_NM FROM `AVP`.`AVP_DEVICE_TB` ADT WHERE ADT.IDX = AOT.DEVICE_ID AND (DEL_YN = 'N' or DEL_YN is NULL)) as deviceName,
+		    ITEM_IDS	as	itemIds,
+		    QUANTITIES as quantities,
+		    SUCCESS_YN	as	successYn,
+		    WORK_RATE	as	workRate,
+		    DEL_ID	as	delId,
+		    DEL_YN	as	delYn,
+		    DATE_FORMAT(UPDATE_DTTM,'%Y-%m-%d %H:%i:%s') as	updateDttm
+		FROM
+			`AVP`.`AVP_ORDERLIST_TB` AOT
+		WHERE 
+			(DEL_YN = 'N' OR DEL_YN is NULL)
+		AND
+			START_DT &lt;= #{todayDt}
+		AND
+			#{todayDt} &lt;= END_DT
+	</select>
+	
+</mapper>

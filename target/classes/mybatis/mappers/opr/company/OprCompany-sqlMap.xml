@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.smartcc.avp.pc.company.dao.CompanyDAO">
+
+
+	<sql id="whereGetCompanys">
+		<if test="period != null">
+			AND DATE_FORMAT(CREATE_DATE,'%Y%m%d') BETWEEN REPLACE(#{searchParams.period.startYmd} , '-','') AND REPLACE(#{searchParams.period.endYmd},'-','')
+		</if>
+		<if test="searchCategory != null">
+			<if test="searchCategory == 'date'">
+<!-- 				AND DATE_FORMAT(CREATE_DATE,'%Y%m%d') BETWEEN REPLACE(#{searchParams.period.startYmd} , '-','') AND REPLACE(#{searchParams.period.endYmd},'-','')			</if> -->
+				AND DATE_FORMAT(CREATE_DATE,'%Y%m%d')BETWEEN #{searchName} AND #{searchName}		
+			</if>
+			<if test="searchCategory == 'companyNm'">
+				AND
+				COMPANY_NAME like CONCAT('%', #{searchName}, '%')
+			</if>
+		
+		</if>
+	</sql>
+	
+		<select id="getCompanyListCountForAdmin" resultType="int">
+		SELECT
+			count(*)
+		FROM
+			`AVP`.`AVP_COMPANY_TB`
+		WHERE 
+			1=1
+		<include refid="whereGetCompanys"/>
+	</select>
+	
+	<select id="getCompanyListForAdmin" resultType="com.smartcc.avp.pc.company.model.response.CompanyListResponse">
+		SELECT	COMPANY_NAME								as	companyName		,
+				COMPANY_ID									as	companyId		,
+				DATE_FORMAT(CREATE_DATE,'%Y-%m-%d')			as	companyCreateDate	
+		FROM	`${dbName}`.`tb_tour_company`
+		WHERE	1=1
+		<include refid="whereGetCompanys"/>
+		ORDER BY COMPANY_ID DESC
+		<if test="pageInfo != null">
+		LIMIT	#{pageInfo.startRowNum},	#{pageInfo.size}
+		</if>
+	</select>
+	
+	<select id="getCompanyListCount" resultType="int">
+		SELECT
+			count(*)
+		FROM
+			`AVP`.`AVP_COMPANY_TB`
+		WHERE
+			REG_CONFIRM = 'Y'
+		AND
+			(DEL_YN	=	'N'	OR	DEL_YN	is	NULL)
+	</select>
+	
+	<select id="getAllCompanyList" resultType="com.smartcc.avp.pc.company.model.response.CompanyListResponse">
+		SELECT	COMPANY_NM							as	companyName		,
+				IDX									as	companyId		,
+				DATE_FORMAT(CREATE_DTTM,'%Y-%m-%d')	as	companyCreateDate	
+		FROM	`AVP`.`AVP_COMPANY_TB`
+	</select>
+	
+	<select id="getCompanyList" resultType="com.smartcc.avp.pc.company.model.response.CompanyListResponse">
+		SELECT
+			COMPANY_NM							as	companyName		,
+			IDX									as	companyId		,
+			DATE_FORMAT(CREATE_DTTM,'%Y-%m-%d')	as	companyCreateDate	
+		FROM
+			`AVP`.`AVP_COMPANY_TB`
+		WHERE
+			REG_CONFIRM = 'Y'
+		AND
+			(DEL_YN	=	'N'	OR	DEL_YN	is	NULL)
+		ORDER BY
+			IDX DESC
+		<if test="pageInfo != null">
+		LIMIT	#{pageInfo.startRowNum},	#{pageInfo.size}
+		</if>
+	</select>
+	
+	<select id="getCompanyReqList" resultType="com.smartcc.avp.pc.company.model.response.CompanyListResponse">
+		SELECT
+			COMPANY_NM							as	companyName		,
+			IDX									as	companyId		,
+			(SELECT NICK_NAME FROM `AVP`.`AVP_USER_TB` WHERE COMPANY_ID = IDX) as userName,
+			DATE_FORMAT(CREATE_DTTM,'%Y-%m-%d')	as	companyCreateDate	
+		FROM
+			`AVP`.`AVP_COMPANY_TB`
+		WHERE
+			REG_CONFIRM = 'N'
+		ORDER BY
+			IDX DESC
+		<if test="pageInfo != null">
+		LIMIT	#{pageInfo.startRowNum},	#{pageInfo.size}
+		</if>
+	</select>
+	
+	<select id="getCompanyReqListCount" resultType="int">
+		SELECT
+			count(*)
+		FROM
+			`AVP`.`AVP_COMPANY_TB`
+		WHERE
+			REG_CONFIRM = 'N'
+	</select>
+	
+	<insert id="companyInsert">
+		INSERT	INTO	`AVP`.`AVP_COMPANY_TB`
+			(
+				COMPANY_NM,
+				WHOLE_STORAGE,
+				REG_CONFIRM,
+				CREATE_ID,
+				UPDATE_ID
+			)
+		VALUES
+			(
+				#{comInsert.companyName}				,
+				#{comInsert.wholeStorage}				,
+				'N',
+				#{comInsert.createId},
+				#{comInsert.createId}
+			)
+	</insert>
+	
+	<select id="companyDetailPage" resultType="com.smartcc.avp.pc.company.model.Company">
+		SELECT
+			IDX		as	companyId		,
+			COMPANY_NM	as	companyName		,
+			(
+				SELECT COUNT(*) FROM `AVP`.`AVP_USER_TB` AUT
+            	WHERE AUT.USER_TYPE = 'ADMIN'
+            	AND AUT.COMPANY_ID = #{companyId}
+            	AND CONFIRM_YN = 'Y'
+            	AND (DEL_YN = 'N' OR DEL_YN is NULL)
+            ) as adminCount,
+    		(
+    			SELECT COUNT(*) FROM `AVP`.`AVP_USER_TB` AUT
+            	WHERE AUT.COMPANY_ID = #{companyId}
+            	AND CONFIRM_YN = 'Y'
+            	AND (DEL_YN = 'N' OR DEL_YN is NULL)
+            ) as userCount
+		FROM
+			`AVP`.`AVP_COMPANY_TB` ACT
+		WHERE
+			ACT.IDX = #{companyId}
+	</select>
+	
+	<select id="companyReqDetailPage" resultType="com.smartcc.avp.pc.company.model.Company">
+		SELECT
+			IDX		as	companyId		,
+			COMPANY_NM	as	companyName		,
+			(SELECT NICK_NAME FROM `AVP`.`AVP_USER_TB` AUT WHERE AUT.COMPANY_ID = ACT.IDX) as nickName,
+			DATE_FORMAT(CREATE_DTTM,'%Y-%m-%d')	as	companyCreateDate
+		FROM
+			`AVP`.`AVP_COMPANY_TB` ACT
+		WHERE
+			ACT.IDX = #{companyId}
+	</select>
+	
+	<update id="companyUpdate">
+		UPDATE	`${dbName}`.`tb_tour_company`	SET
+			COMPANY_NAME	=	#{company.companyName}		,
+			COMPANY_DESC	=	#{company.companyDesc}		,
+			LOCATION		=	#{company.companyLocation}	,
+			COMPANY_BRANCH	=	#{company.companyBranch}	,
+			UPDATE_ID		=	#{company.userId}					,
+			UPDATE_DATE		=	DATE_FORMAT(NOW(),'%Y%m%d%H%i%s')
+		WHERE COMPANY_ID	=	#{company.companyId}
+	</update>
+	
+	<update id="companyReqUpdate">
+		UPDATE	`AVP`.`AVP_COMPANY_TB`	SET
+			REG_CONFIRM = 'Y',
+			UPDATE_DTTM		=	DATE_FORMAT(NOW(),'%Y%m%d%H%i%s')
+		WHERE IDX	=	#{company.companyId}
+	</update>
+	
+	<delete id="companyDelete">
+		DELETE FROM `${dbName}`.`tb_tour_company`
+		WHERE	COMPANY_ID	=	#{companyId}
+	</delete>
+	
+	<select id="getCompanyIdByName" resultType="int">
+		SELECT
+			IDX
+		FROM
+			`AVP`.`AVP_COMPANY_TB`
+		WHERE
+			COMPANY_NM = #{companyName}
+	</select>
+	
+	<select id="getCompanyIntfc" resultType="com.smartcc.avp.pc.company.model.Company">
+		SELECT
+			COMPANY_NM			as	companyName		,
+			CAPACITY_AR			as	capacityAr		,
+			CAPACITY_STORAGE	as	capacityStorage	,
+			WHOLE_STORAGE		as	wholeStorage	
+		FROM
+			`AVP`.`AVP_COMPANY_TB`
+		WHERE
+			IDX = #{companyId}
+	</select>
+	
+	<update id="updateCompanyIntfc">
+		UPDATE	`AVP`.`AVP_COMPANY_TB`	SET
+			CAPACITY_AR = #{capacityAr},
+			UPDATE_DTTM		=	DATE_FORMAT(NOW(),'%Y%m%d%H%i%s')
+		WHERE IDX	=	#{companyId}
+	</update>
+	
+</mapper>

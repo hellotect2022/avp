@@ -1,0 +1,428 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.smartcc.avp.pc.shop.dao.ShopDAO">
+	<sql id="whereGetShops">
+		<if test="period != null">
+			AND DATE_FORMAT(CREATE_DATE,'%Y%m%d') BETWEEN REPLACE(#{searchParams.period.startYmd} , '-','') AND REPLACE(#{searchParams.period.endYmd},'-','')
+		</if>
+		<if test="searchCategory != null">
+			<if test="searchCategory == 'date'">
+<!-- 				AND DATE_FORMAT(CREATE_DATE,'%Y%m%d') BETWEEN REPLACE(#{searchParams.period.startYmd} , '-','') AND REPLACE(#{searchParams.period.endYmd},'-','')			</if> -->
+				AND DATE_FORMAT(TTS.CREATE_DATE,'%Y%m%d')BETWEEN #{searchName} AND #{searchName}		
+			</if>
+			<if test="searchCategory == 'shopname'">
+				AND
+				TTS.SHOP_NAME like CONCAT('%', #{searchName}, '%')
+			</if>
+		</if>
+	</sql>
+	
+	<select id="getShopListCount" resultType="int">
+		SELECT
+			count(*)
+		FROM
+			`AVP`.`AVP_BRANCH_TB`
+		WHERE
+			(SELECT COMPANY_ID FROM `AVP`.`AVP_USER_TB` WHERE IDX = #{userId}) = COMPANY_ID
+		AND
+			(DEL_YN	=	'N'	OR	DEL_YN	is	NULL)
+	</select>
+	
+	<select id="getShopList" resultType="com.smartcc.avp.pc.shop.model.response.ShopListResponse">
+		SELECT
+			IDX						as	branchId,
+		    COMPANY_ID				as	companyId,
+		    BRANCH_NM				as	branchName,
+		    BRANCH_ADDR				as	branchAddr,
+		    (SELECT count(*) FROM `AVP`.`AVP_USER_TB` WHERE BRANCH_ID = branchId) as userCount,
+			DEL_YN					as	delYn,
+		    DATE_FORMAT(CREATE_DTTM,'%Y-%m-%d %H:%i:%s') AS createDate,
+			DATE_FORMAT(UPDATE_DTTM,'%Y-%m-%d %H:%i:%s') AS updateDate
+		FROM
+			`AVP`.`AVP_BRANCH_TB`
+		WHERE
+			(SELECT COMPANY_ID FROM `AVP`.`AVP_USER_TB` WHERE IDX = #{userId}) = COMPANY_ID
+		AND
+            (DEL_YN	=	'N'	OR	DEL_YN	is	NULL)
+		ORDER BY
+			UPDATE_DTTM DESC		
+		<if test="pageInfo != null">
+		LIMIT	#{pageInfo.startRowNum},	#{pageInfo.size}
+		</if>
+	</select>
+	
+	
+	<select id="getShopListCountForSeller" resultType="int">
+		SELECT	count(*)	
+		FROM	`AVP`.`AVP_BRANCH_TB` ABT
+		JOIN	`AVP`.`AVP_COMPANY_TB` ACT
+        ON		ABT.COMPANY_ID	=	ACT.IDX
+   		WHERE	ABT.COMPANY_ID	=	#{companyId}
+	</select>
+	
+	<select id="getShopListForSeller" resultType="com.smartcc.avp.pc.shop.model.response.ShopListResponse">
+		SELECT
+			IDX				as		branchId,
+			BRANCH_NM		as		branchName,
+			BRANCH_ADDR		as		branchAddr
+        FROM `AVP`.`AVP_BRANCH_TB`
+        WHERE COMPANY_ID = #{companyId}
+	</select>
+	
+	
+	
+	<select id="getShopListCountForAdmin" resultType="int">
+		SELECT	count(*)	
+		FROM	`${dbName}`.`tb_tour_shop` TTS
+		JOIN	`${dbName}`.`tb_tour_company` TTC
+        ON		TTS.COMPANY_ID	=	TTC.COMPANY_ID
+        JOIN	tb_tour_user	TTU
+        ON		TTS.CREATE_ID	=	TTU.USER_ID
+   		WHERE	TTS.COMPANY_ID	=	#{companyId}
+		<include refid="whereGetShops"/>
+	</select>
+	
+	<select id="getShopListForAdmin" resultType="com.smartcc.avp.pc.shop.model.response.ShopListResponse">
+		SELECT	TTS.SHOP_ID								AS	shopId		,
+				TTS.SHOP_NAME							AS	shopName	,
+				TTU.NICK_NAME							AS	userName	,
+				TTC.COMPANY_NAME						AS	companyName	,	
+				TTS.SHOP_INTRO							AS	shopIntro	,
+				TTS.SHOP_DESC							AS	shopDesc	,
+				TTS.SHOP_TYPE							AS	shopType	,
+				TTS.SHOP_HOMEPAGE						AS	shopHomepage,
+				TTS.SHOP_PHONE							AS	shopPhone	,
+				TTS.SHOP_X_LOCATION						AS	shopXLocation,
+				TTS.SHOP_Y_LOCATION						AS	shopYLocation,
+				TTS.SHOP_IMAGE_ID						AS	shopImageId	,
+				(SELECT FILE_URL FROM tb_tour_file WHERE FILE_ID = TTS.SHOP_IMAGE_ID )	as shopImageUrl,
+				THUMBNAIL_IMAGE_ID					AS	thumbnailImageId,
+				(SELECT FILE_URL FROM tb_tour_file WHERE FILE_ID = TTS.THUMBNAIL_IMAGE_ID )	as thumbnailImageUrl,
+				VOICE_FILE_ID						AS	voiceFileId,
+				(SELECT FILE_URL FROM tb_tour_file WHERE FILE_ID = TTS.VOICE_FILE_ID )	as voiceFileUrl,
+				VR_VIDEO_ID							AS vrVideoId,	
+				(SELECT FILE_URL FROM tb_tour_file WHERE FILE_ID = TTS.VR_VIDEO_ID )	as vrVideoUrl,
+				VR_PHOTO_ID							AS vrPhotoId,	
+				(SELECT FILE_URL FROM tb_tour_file WHERE FILE_ID = TTS.VR_PHOTO_ID )	as vrPhotoUrl,
+				DATE_FORMAT(TTS.UPDATE_DATE,'%Y-%m-%d %H:%i:%s') AS updateDate		
+		FROM	`${dbName}`.`tb_tour_shop` TTS
+		JOIN	`${dbName}`.`tb_tour_company` TTC
+        ON		TTS.COMPANY_ID	=	TTC.COMPANY_ID
+        JOIN	tb_tour_user	TTU
+        ON		TTS.CREATE_ID	=	TTU.USER_ID
+       	WHERE	TTS.COMPANY_ID	=	#{companyId}
+		<include refid="whereGetShops"/>
+		ORDER BY TTS.SHOP_ID DESC
+		<if test="pageInfo != null">
+		LIMIT	#{pageInfo.startRowNum},	#{pageInfo.size}
+		</if>
+	</select>
+	
+	
+	<select id="getIntfcShopList" resultType="com.smartcc.avp.pc.shop.model.response.ShopListResponse">
+		SELECT	TTS.SHOP_ID								AS	shopId		,
+				TTS.SHOP_NAME							AS	shopName	,
+				TTU.USER_NAME							AS	userName	,
+				TTC.COMPANY_NAME						AS	companyName	,	
+				TTS.SHOP_INTRO							AS	shopIntro	,
+				TTS.SHOP_DESC							AS	shopDesc	,
+				TTS.SHOP_TYPE							AS	shopType	,
+				TTS.SHOP_ADDRESS						AS	shopAddress	,
+				TTS.SHOP_HOMEPAGE						AS	shopHomepage,
+				TTS.SHOP_PHONE							AS	shopPhone	,
+				TTS.SHOP_X_LOCATION						AS	shopXLocation,
+				TTS.SHOP_Y_LOCATION						AS	shopYLocation,
+				TTS.LEAFLET_IMAGE_ID					AS	leafletImageId,
+				(SELECT CONCAT(#{host}, 'user_', CREATE_ID, '/', FILE_NAME) FROM tb_tour_file WHERE FILE_ID = TTS.LEAFLET_IMAGE_ID) 		as leafletImageUrl,
+				TTS.SHOP_IMAGE_ID						AS	shopImageId	,
+				(SELECT CONCAT(#{host}, 'user_', CREATE_ID, '/', FILE_NAME) FROM tb_tour_file WHERE FILE_ID = TTS.SHOP_IMAGE_ID) 		as shopImageUrl,
+				(SELECT CONCAT(#{host}, 'user_', CREATE_ID, '/', FILE_NAME) FROM tb_tour_file WHERE FILE_ID = TTS.THUMBNAIL_IMAGE_ID)	as thumbnailImageUrl,
+				(SELECT CONCAT(#{host}, 'user_', CREATE_ID, '/', FILE_NAME) FROM tb_tour_file WHERE FILE_ID = TTS.VOICE_FILE_ID) 		as voiceFileUrl,
+				(SELECT CONCAT(#{host}, 'user_', CREATE_ID, '/', FILE_NAME) FROM tb_tour_file WHERE FILE_ID = TTS.VR_VIDEO_ID) 			as vrVideoUrl,
+				(SELECT CONCAT(#{host}, 'user_', CREATE_ID, '/', FILE_NAME) FROM tb_tour_file WHERE FILE_ID = TTS.VR_PHOTO_ID) 			as vrPhotoUrl,
+				THUMBNAIL_IMAGE_ID						AS	thumbnailImageId,
+				VOICE_FILE_ID							AS	voiceFileId,
+				VR_VIDEO_ID								AS 	vrVideoId,	
+				VR_URL									AS	vrUrl,											<!-- Add 2017.4.19 . Bum -->
+				DATE_FORMAT(TTS.CREATE_DATE,'%Y-%m-%d')	AS	createDate		
+		FROM	`${dbName}`.`tb_tour_shop` TTS
+		JOIN	`${dbName}`.`tb_tour_company` TTC
+        ON		TTS.COMPANY_ID	=	TTC.COMPANY_ID
+        JOIN	tb_tour_user	TTU
+        ON		TTS.CREATE_ID	=	TTU.USER_ID
+        ORDER BY TTS.SHOP_ID DESC
+        LIMIT	#{startRowNum},	#{size}
+	</select>
+	
+	<insert id="insertShop" useGeneratedKeys="true">
+	INSERT INTO `AVP`.`AVP_BRANCH_TB`
+		(
+			COMPANY_ID,
+			BRANCH_NM,
+			BRANCH_ADDR,
+			CREATE_ID
+		)
+	VALUES
+		(
+			#{shopInsert.companyId},
+			#{shopInsert.branchName},
+			#{shopInsert.branchAddr},
+			#{shopInsert.createId}
+		)
+	</insert>
+	 
+	<update id="updateShop">
+	update `${dbName}`.`tb_tour_shop`	set
+		COMPANY_ID		=	#{shopInsert.companyId},
+		SHOP_NAME		=	#{shopInsert.shopName},
+		SHOP_INTRO		=	#{shopInsert.shopIntro},
+		SHOP_DESC		=	#{shopInsert.shopDesc},
+		SHOP_TYPE		=	#{shopInsert.shopType},
+		SHOP_HOMEPAGE	=	#{shopInsert.shopHomepage},
+		SHOP_PHONE		=	#{shopInsert.shopPhone},
+		SHOP_X_LOCATION	=	#{shopInsert.shopXLocation},
+		SHOP_Y_LOCATION	=	#{shopInsert.shopYLocation},
+		LEAFLET_IMAGE_ID = 	#{shopInsert.leafletImageId},
+		SHOP_IMAGE_ID	 = 	#{shopInsert.shopImageId},
+		THUMBNAIL_IMAGE_ID	= #{shopInsert.thumbnailImageId},
+		VOICE_FILE_ID	= 	#{shopInsert.voiceFileId},
+		VR_VIDEO_ID		= 	#{shopInsert.vrVideoId},
+		VR_PHOTO_ID		=	#{shopInsert.vrPhotoId},	
+		SHOP_ADDRESS	= 	#{shopInsert.shopAddress},	
+		UPDATE_ID		=	#{shopInsert.updateId},
+		UPDATE_DATE		=	DATE_FORMAT(NOW(),'%Y%m%d%H%i%s')
+		WHERE SHOP_ID	=	#{shopInsert.shopId}
+	</update>
+	
+	<update id="shopUpatePageUpdate">
+		UPDATE
+			`AVP`.`AVP_BRANCH_TB`
+		SET
+			BRANCH_NM		=	#{branchUpdate.branchName},
+			BRANCH_ADDR		=	#{branchUpdate.branchAddr},
+			UPDATE_ID		=	#{branchUpdate.updateId},	
+			UPDATE_DTTM		=	DATE_FORMAT(NOW(),'%Y%m%d%H%i%s')
+		WHERE
+			IDX				=	#{branchUpdate.branchId}
+	</update>
+	
+	
+	<select id="shopDetailPage" resultType="com.smartcc.avp.pc.shop.model.response.ShopDetailResponse">
+		SELECT
+			IDX						as	branchId,
+		    COMPANY_ID				as	companyId,
+		    BRANCH_NM				as	branchName,
+		    BRANCH_ADDR				as	branchAddr,
+		    (SELECT count(*) FROM `AVP`.`AVP_USER_TB` AUT WHERE AUT.BRANCH_ID = branchId) as userCount,
+		    (SELECT COMPANY_NM FROM `AVP`.`AVP_COMPANY_TB` ACT WHERE ACT.IDX = companyId) as companyName,
+			DEL_YN					as	delYn,
+		    DATE_FORMAT(CREATE_DTTM,'%Y-%m-%d %H:%i:%s') AS createDate,
+			DATE_FORMAT(UPDATE_DTTM,'%Y-%m-%d %H:%i:%s') AS updateDate
+		FROM
+			`AVP`.`AVP_BRANCH_TB` ABT
+		WHERE
+			IDX = #{branchId}
+	</select>
+	
+	<select id="shopDetailImage" resultType="String">
+		SELECT FILE_URL as shopImageUrl
+		FROM tb_tour_file 
+		WHERE FILE_ID = #{fileId}
+	</select>
+	
+	<select id="shopIntfcDetailPage" resultType="com.smartcc.avp.pc.shop.model.response.ShopDetailResponse">
+		SELECT	TTS.SHOP_ID								AS	shopId				,
+					TTS.SHOP_NAME							AS	shopName		,
+					TTU.USER_NAME							AS	userName		,
+					TTC.COMPANY_NAME						AS	companyName		,		
+					TTS.SHOP_INTRO							AS	shopIntro		,
+					TTS.SHOP_DESC							AS	shopDesc		,
+					TTS.SHOP_TYPE							AS	shopType		,
+					TTS.SHOP_HOMEPAGE						AS	shopHomepage	,
+					TTS.SHOP_PHONE							AS	shopPhone		,
+					TTS.SHOP_X_LOCATION						AS	shopXLocation	,
+					TTS.SHOP_Y_LOCATION						AS	shopYLocation	,
+					TTS.SHOP_IMAGE_ID						AS	shopImageId		,
+					THUMBNAIL_IMAGE_ID					AS	thumbnailImageId	,
+					(SELECT CONCAT(#{host}, 'user_', CREATE_ID, '/', FILE_NAME) FROM tb_tour_file WHERE FILE_ID = TTS.SHOP_IMAGE_ID) 		as shopImageUrl,
+					(SELECT CONCAT(#{host}, 'user_', CREATE_ID, '/', FILE_NAME) FROM tb_tour_file WHERE FILE_ID = TTS.THUMBNAIL_IMAGE_ID)	as thumbnailImageUrl,
+					(SELECT CONCAT(#{host}, 'user_', CREATE_ID, '/', FILE_NAME) FROM tb_tour_file WHERE FILE_ID = TTS.VOICE_FILE_ID) 		as voiceFileUrl,
+					(SELECT CONCAT(#{host}, 'user_', CREATE_ID, '/', FILE_NAME) FROM tb_tour_file WHERE FILE_ID = TTS.VR_VIDEO_ID) 			as vrVideoUrl,
+					(SELECT CONCAT(#{host}, 'user_', CREATE_ID, '/', FILE_NAME) FROM tb_tour_file WHERE FILE_ID = TTS.VR_PHOTO_ID) 			as vrPhotoUrl,
+					VOICE_FILE_ID						AS	voiceFileId			,
+					VR_VIDEO_ID							AS vrVideoId				,	
+					DATE_FORMAT(TTS.CREATE_DATE,'%Y-%m-%d')	AS	createDate		,
+					TTS.SHOP_ADDRESS	as	shopAddress	,
+					TTS.VR_URL			as	vrUrl						<!--  Add 2017.4.19 . Bum -->
+			FROM	`${dbName}`.`tb_tour_shop` TTS
+			JOIN	`${dbName}`.`tb_tour_company` TTC
+	        ON		TTS.COMPANY_ID	=	TTC.COMPANY_ID
+	        JOIN	tb_tour_user	TTU
+	        ON		TTS.CREATE_ID	=	TTU.USER_ID
+	     WHERE 		TTS.SHOP_ID	=	#{shopId}
+	</select>
+	
+	<select id="getIntfcShopProdList" resultType="com.smartcc.avp.pc.product.model.Product">
+		SELECT		TTP.PRODUCT_NAME	as	productName	, 
+					TTP.PRODCUT_DESC	as	productDesc	,
+					IFNULL((SELECT CONCAT(#{host},'user_',TTP.UPDATE_ID,'/',FILE_NAME) FROM tb_tour_file WHERE FILE_ID = TTP.IMAGE_ID ),
+							(SELECT CONCAT(#{host},'user_',TTP.CREATE_ID,'/',FILE_NAME) FROM tb_tour_file WHERE FILE_ID = TTP.IMAGE_ID ))	as productImageUrl
+			FROM 	`${dbName}`.`tb_tour_product` TTP
+			JOIN	`${dbName}`.`tb_tour_shop`	TTS
+			ON		TTP.SHOP_ID	=	TTS.SHOP_ID 
+			JOIN	`${dbName}`.`tb_tour_company`	TTC
+			ON		TTS.COMPANY_ID	=	TTC.COMPANY_ID	
+		WHERE		TTS.SHOP_ID		=	#{shopId}
+		LIMIT		#{startRowNum},	#{size}
+	</select>
+	
+	<insert id="insertShopScore">
+		INSERT INTO `${dbName}`.`tb_tour_shop_score`
+		(
+			USER_ID,
+			SHOP_ID,
+			SCORE ,
+			CREATE_DATE
+		)
+		VALUES
+		(
+			#{userId},
+			#{shopId},
+			#{score},
+			DATE_FORMAT(NOW(),'%Y%m%d%H%i%s')
+		)
+	</insert>
+	
+	<!-- <delete id="deleteShop">
+		DELETE FROM	`${dbName}`.`tb_tour_shop`
+		WHERE	SHOP_ID	=	#{shopId}
+	</delete> -->
+	
+	<update id="deleteShop">
+		UPDATE
+			`AVP`.`AVP_BRANCH_TB`
+		SET
+			DEL_ID		=	#{userId},
+			DEL_YN		=	'Y'
+		WHERE
+			IDX				=	#{branchId}
+	</update>
+
+	<select id="getIntfcSearchShopList" resultType="com.smartcc.avp.pc.shop.model.response.ShopListResponse">
+		SELECT	TTS.SHOP_ID								AS	shopId		,
+					TTS.SHOP_NAME							AS	shopName	,
+					TTU.USER_NAME							AS	userName	,
+					TTC.COMPANY_NAME						AS	companyName	,	
+					TTS.SHOP_INTRO							AS	shopIntro	,
+					TTS.SHOP_DESC							AS	shopDesc	,
+					TTS.SHOP_TYPE							AS	shopType	,
+					TTS.SHOP_HOMEPAGE						AS	shopHomepage,
+					TTS.SHOP_PHONE							AS	shopPhone	,
+					TTS.SHOP_X_LOCATION						AS	shopXLocation,
+					TTS.SHOP_Y_LOCATION						AS	shopYLocation,
+					TTS.SHOP_IMAGE_ID						AS	shopImageId	,
+					TTS.VR_URL								AS 	vrUrl,
+					(SELECT CONCAT(#{host}, 'user_', CREATE_ID, '/', FILE_NAME) FROM tb_tour_file WHERE FILE_ID = TTS.SHOP_IMAGE_ID) 		as shopImageUrl,
+					(SELECT CONCAT(#{host}, 'user_', CREATE_ID, '/', FILE_NAME) FROM tb_tour_file WHERE FILE_ID = TTS.THUMBNAIL_IMAGE_ID)	as thumbnailImageUrl,
+					(SELECT CONCAT(#{host}, 'user_', CREATE_ID, '/', FILE_NAME) FROM tb_tour_file WHERE FILE_ID = TTS.VOICE_FILE_ID) 		as voiceFileUrl,
+					(SELECT CONCAT(#{host}, 'user_', CREATE_ID, '/', FILE_NAME) FROM tb_tour_file WHERE FILE_ID = TTS.VR_VIDEO_ID) 			as vrVideoUrl,
+					(SELECT CONCAT(#{host}, 'user_', CREATE_ID, '/', FILE_NAME) FROM tb_tour_file WHERE FILE_ID = TTS.VR_PHOTO_ID) 			as vrPhotoUrl,
+					DATE_FORMAT(TTS.CREATE_DATE,'%Y-%m-%d')	AS	createDate		
+			FROM	`${dbName}`.`tb_tour_shop` TTS
+			JOIN	`${dbName}`.`tb_tour_company` TTC
+	        ON		TTS.COMPANY_ID	=	TTC.COMPANY_ID
+	        JOIN	tb_tour_user	TTU
+	        ON		TTS.CREATE_ID	=	TTU.USER_ID
+	        WHERE	TTS.SHOP_NAME like CONCAT('%', #{searchName}, '%')
+            LIMIT	#{startRowNum},	#{size}
+	</select>
+	
+	<select id="getScore" resultType="String">
+		SELECT SCORE
+		FROM `${dbName}`.`tb_tour_shop_score`	
+	    WHERE	SHOP_ID	=	#{shopId}
+	    AND	USER_ID	=	#{userId}
+	</select>
+	
+	<select id="checkProduct" resultType="int">
+		SELECT	COUNT(*)
+		FROM	`${dbName}`.`tb_tour_shop`	
+	    WHERE	SHOP_ID	=	#{shopId}
+	    AND		COMPANY_ID	=	#{user.companyId}	
+	</select>
+	
+	<delete id="deleteShopArr">
+		DELETE	FROM `${dbName}`.`tb_tour_shop`
+		WHERE	SHOP_ID	IN
+			<foreach collection="list" item="item" index="index" separator="," open="(" close=")">
+				#{item}
+			</foreach>
+	</delete>
+	
+	<select id="getIntfcShopListFromAddress" resultType="com.smartcc.avp.intfc.model.response.ShopListFromAddressResponse">
+		SELECT	TTES.EVENT_ID								AS	eventId			,
+				TTES.SHOP_ID								AS	shopId			,
+				TTES.SHOP_NAME								AS	shopName		,
+				TTES.SHOP_X_LOCATION						AS	shopXLocation	,
+				TTES.SHOP_Y_LOCATION						AS	shopYLocation	,
+				TTES.SHOP_ADDRESS							AS	shopAddress		,
+				TTE.EVENT_DISTANCE							AS	eventDistance	
+		FROM	`${dbName}`.`tb_tour_event_shop` TTES
+		JOIN	`${dbName}`.`tb_tour_event`	TTE
+		ON		TTES.EVENT_ID  = TTE.EVENT_ID	
+        WHERE	TTES.SHOP_ADDRESS like CONCAT('%', #{searchName}, '%')
+	</select>
+	
+	<select id="getIntfcShopListFromEventId" resultType="com.smartcc.avp.intfc.model.response.ShopListFromAddressResponse">
+		SELECT	TTES.EVENT_ID								AS	eventId			,
+				TTES.SHOP_ID								AS	shopId			,
+				TTES.SHOP_NAME								AS	shopName		,
+				TTES.SHOP_X_LOCATION						AS	shopXLocation	,
+				TTES.SHOP_Y_LOCATION						AS	shopYLocation	,
+				TTES.SHOP_ADDRESS							AS	shopAddress		,
+				TTE.EVENT_DISTANCE							AS	eventDistance	
+		FROM	`${dbName}`.`tb_tour_event_shop` TTES
+		JOIN	`${dbName}`.`tb_tour_event`	TTE
+		ON		TTES.EVENT_ID  = TTE.EVENT_ID	
+        WHERE	TTES.EVENT_ID = #{searchName}
+	</select>
+	
+	<select id="getShopListFromArr" resultType="com.smartcc.avp.pc.shop.model.response.ShopListResponse">
+		SELECT	TTS.SHOP_X_LOCATION	AS	shopXLocation	,
+				TTS.SHOP_Y_LOCATION	AS	shopYLocation	,
+				TTS.SHOP_ADDRESS	AS	shopAddress		,
+				TTS.SHOP_ID			AS	shopId			,
+				TTS.SHOP_NAME		AS	shopName		
+		FROM 	`${dbName}`.`tb_tour_shop`			TTS
+		WHERE	SHOP_ID	IN
+		<foreach collection="list" item="item" index="index" separator="," open="(" close=")">
+			#{item}
+		</foreach>
+	</select>	
+	
+	<!-- Add 2017. 09. 19. JBum | 여러 사진 등록용 -->
+	<select id="getFileUrl" resultType="String">
+		SELECT 	(SELECT CONCAT(#{host}, 'user_', CREATE_ID, '/', FILE_NAME) FROM tb_tour_file WHERE FILE_ID = #{imageId} ) as shopImageUrl
+		FROM 	tb_tour_file
+		WHERE 	FILE_ID = #{imageId}
+	</select>
+	
+	<select id="isOverlapBranch" resultType="int">
+		SELECT
+			count(*)
+		FROM
+			`AVP`.`AVP_BRANCH_TB`
+		WHERE
+			BRANCH_NM	=	#{branchName}
+		AND
+			COMPANY_ID	=	#{companyId}
+		AND
+			(DEL_YN	=	'N'	OR	DEL_YN	is	NULL)
+		<if test="branchId != null">
+		AND
+			IDX	!=	#{branchId}
+		</if>
+	</select>
+	
+</mapper>

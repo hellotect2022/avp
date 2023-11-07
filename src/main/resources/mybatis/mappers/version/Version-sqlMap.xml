@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.smartcc.avp.intfc.version.dao.VersionDAO">
+
+	<select id="getVersion" resultType="com.smartcc.avp.intfc.version.model.VersionResponse">
+		SELECT	VERSION				as version,
+				UPDATE_DATE			as updateDate
+		FROM	`${dbName}`.`tb_tour_version`
+	</select>
+
+	<update id="updateVersion">
+		UPDATE `${dbName}`.`tb_tour_version`
+		SET
+			VERSION		=	#{version}
+		WHERE IDX		=	1
+	</update>
+
+</mapper>

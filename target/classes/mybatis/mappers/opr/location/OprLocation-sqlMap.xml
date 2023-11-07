@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.smartcc.avp.intfc.location.dao.LocationDAO">
+
+	<select id="getListBeacon" resultType="com.smartcc.avp.intfc.model.request.location.IntfcLocationHist">
+		SELECT
+			IDX			as	idx,
+		    DEVICE_ID	as	deviceId,
+		    BEACON_ID	as	beaconId,
+		    RSSI		as	rssi,
+		    DATE_FORMAT(CREATE_DTTM, '%Y-%m-%d %H:%i:%s')	as createDttm
+		FROM
+			`AVP`.`AVP_BEACON_HIST_TB`
+		WHERE
+			DEVICE_ID	=	#{deviceId}
+		AND
+			<![CDATA[
+			CREATE_DTTM <= DATE_FORMAT(now(), '%Y-%m-%d %H:%i:%s')
+			]]>
+		AND
+			<![CDATA[
+			CREATE_DTTM >= DATE_SUB(now(), INTERVAL 5 SECOND)
+			]]>
+		ORDER BY
+			CREATE_DTTM DESC
+	</select>
+
+	<insert id="insertBeacon" useGeneratedKeys="true">
+	INSERT INTO `AVP`.`AVP_BEACON_HIST_TB`
+		(
+			DEVICE_ID,
+			BEACON_ID,
+			RSSI
+		)
+	VALUES
+		(
+			#{beacon.deviceId},
+			#{beacon.beaconId},
+			#{beacon.rssi}
+		)
+	</insert>
+	
+	<update id="updateOrderlist">
+		UPDATE `AVP`.`AVP_ORDERLIST_TB`	set
+				ORDERLIST_NM	=	#{orderlistUpdate.orderlistName},
+				START_DT		=	#{orderlistUpdate.startDt},
+				END_DT			=	#{orderlistUpdate.endDt},
+				DEVICE_ID		=	#{orderlistUpdate.deviceId},
+				ITEM_IDS		=	#{orderlistUpdate.itemIds},
+				QUANTITIES		=	#{orderlistUpdate.quantities},
+				UPDATE_ID		=	#{orderlistUpdate.updateId},
+				UPDATE_DTTM		=	DATE_FORMAT(NOW(),'%Y%m%d%H%i%s')
+		WHERE 	IDX				=	#{orderlistUpdate.orderlistId}
+	</update>
+	
+	<update id="deleteOrderlist">
+		UPDATE `AVP`.`AVP_ORDERLIST_TB`	set
+				DEL_ID	=	#{userId},
+				DEL_YN	=	'Y'
+		WHERE 	IDX		=	#{orderlistId}
+	</update>
+
+</mapper>

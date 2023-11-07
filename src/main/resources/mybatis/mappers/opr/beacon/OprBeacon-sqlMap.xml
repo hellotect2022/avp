@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.smartcc.avp.pc.beacon.dao.BeaconDAO">
+
+	<select id="getBeaconList" resultType="com.smartcc.avp.pc.beacon.model.Beacon">
+		SELECT
+			IDX					as beaconId,
+		    BEACON_NM			as	beaconName,
+		    BEACON_MAC			as	beaconMac,
+		    BEACON_LATITUDE		as	beaconLat,
+		    BEACON_LONGITUDE	as	beaconLng,
+		    DEL_ID				as	delId,
+		    DEL_YN				as	delYn,
+		    CREATE_ID			as	createId,
+		    DATE_FORMAT(CREATE_DTTM,'%Y-%m-%d %H:%i:%s') as	createDttm,
+		    UPDATE_ID			as	updateId,
+		    DATE_FORMAT(UPDATE_DTTM,'%Y-%m-%d %H:%i:%s') as	updateDttm
+		FROM
+			`AVP`.`AVP_BEACON_INFO_TB` ABIT
+		WHERE 
+			COMPANY_ID	=	#{companyId}
+		AND
+			(DEL_YN = 'N' OR DEL_YN is NULL)
+	</select>
+
+	<select id="getBeacon" resultType="com.smartcc.avp.pc.beacon.model.Beacon">
+		SELECT
+			IDX					as beaconId,
+		    BEACON_NM			as	beaconName,
+		    BEACON_MAC			as	beaconMac,
+		    BEACON_LATITUDE		as	beaconLat,
+		    BEACON_LONGITUDE	as	beaconLng,
+		    DEL_ID				as	delId,
+		    DEL_YN				as	delYn,
+		    CREATE_ID			as	createId,
+		    DATE_FORMAT(CREATE_DTTM,'%Y-%m-%d %H:%i:%s') as	createDttm,
+		    UPDATE_ID			as	updateId,
+		    DATE_FORMAT(UPDATE_DTTM,'%Y-%m-%d %H:%i:%s') as	updateDttm
+		FROM
+			`AVP`.`AVP_BEACON_INFO_TB` ABIT
+		WHERE
+			IDX			=	#{beaconId}
+		AND
+			(DEL_YN = 'N' OR DEL_YN is NULL)
+	</select>
+
+	<insert id="insertBeacon" useGeneratedKeys="true">
+		INSERT INTO `AVP`.`AVP_BEACON_INFO_TB`
+			(
+				COMPANY_ID,
+				BEACON_NM,
+				BEACON_MAC,
+				BEACON_LATITUDE,
+				BEACON_LONGITUDE,
+				DEL_YN,
+				CREATE_ID,
+				UPDATE_ID,
+				UPDATE_DTTM
+			)
+		VALUES
+			(
+				#{beaconInsert.companyId},
+				#{beaconInsert.beaconName},
+				#{beaconInsert.beaconMac},
+				#{beaconInsert.beaconLat},
+				#{beaconInsert.beaconLng},
+				'N',
+				#{beaconInsert.createId},
+				#{beaconInsert.createId},
+				DATE_FORMAT(NOW(),'%Y%m%d%H%i%s')
+			)
+	</insert>
+	
+	<update id="updateBeacon">
+		UPDATE `AVP`.`AVP_BEACON_INFO_TB`	set
+				BEACON_NM			=	#{beaconUpdate.beaconName},
+				BEACON_MAC			=	#{beaconUpdate.beaconMac},
+				BEACON_LATITUDE		=	#{beaconUpdate.beaconLat},
+				BEACON_LONGITUDE	=	#{beaconUpdate.beaconLng},
+				UPDATE_ID			=	#{beaconUpdate.updateId},
+				UPDATE_DTTM			=	DATE_FORMAT(NOW(),'%Y%m%d%H%i%s')
+		WHERE 	IDX					=	#{beaconUpdate.beaconId}
+	</update>
+	
+	<update id="deleteBeacon">
+		UPDATE `AVP`.`AVP_BEACON_INFO_TB`	set
+				DEL_ID	=	#{userId},
+				DEL_YN	=	'Y'
+		WHERE 	IDX		=	#{beaconId}
+	</update>
+			
+</mapper>

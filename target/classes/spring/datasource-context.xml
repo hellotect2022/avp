@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+                           http://www.springframework.org/schema/tx
+                           http://www.springframework.org/schema/tx/spring-tx-3.1.xsd">
+
+	<tx:annotation-driven transaction-manager="transactionManager" proxy-target-class="true"/>
+	<tx:annotation-driven transaction-manager="loggTransactionManager" proxy-target-class="true"/>
+
+	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSourceMain" />
+		<property name="globalRollbackOnParticipationFailure" value="false" />
+	</bean>
+
+	<!-- Parent DataSource -->
+	<bean id="parentDataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+		<property name="driverClassName" value="#{db['database.driver']}" />
+		<property name="minIdle" value="20" />
+		<property name="removeAbandoned" value="true" />
+		<property name="removeAbandonedTimeout" value="30" />
+		<property name="logAbandoned" value="true" />
+		<property name="testWhileIdle" value="true" />
+		<property name="validationQuery" value="SELECT 1 FROM DUAL" />
+		<property name="testOnBorrow" value="true" />
+		<property name="timeBetweenEvictionRunsMillis" value="30000" />
+	</bean>
+	
+	<!-- Main DataSource -->
+	<bean id="dataSourceMain" parent="parentDataSource">
+		<property name="url" value="#{db['database.main.url']}" />
+		<property name="username" value="#{db['database.main.user']}" />
+		<property name="password" value="#{db['database.main.password']}" />
+		<property name="maxIdle" value="#{db['database.pool.main.size']}" />
+		<property name="maxActive" value="#{db['database.pool.main.size']}" />
+	</bean>
+	
+	<!-- define the SqlSessionFactoryMain -->
+	<bean id="sqlSessionFactoryMain" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSourceMain" />
+		<property name="configLocation" value="classpath:/mybatis/mybatis-config.xml" />
+		<property name="mapperLocations" value="classpath:/mybatis/mappers/**/*.xml" />
+	</bean>	
+	
+    <bean id="sqlSession" class="org.mybatis.spring.SqlSessionTemplate" destroy-method="clearCache">
+        <constructor-arg index="0" ref="sqlSessionFactoryMain" />
+    </bean>	
+    
+    <bean id="loggTransactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSourceLog" />
+		<property name="globalRollbackOnParticipationFailure" value="false" />
+	</bean>
+    
+    <!-- Log DataSource -->
+	<bean id="dataSourceLog" parent="parentDataSource">
+		<property name="url" value="#{db['database.log.url']}" />
+		<property name="username" value="#{db['database.log.user']}" />
+		<property name="password" value="#{db['database.log.password']}" />
+		<property name="maxIdle" value="#{db['database.pool.main.size']}" />
+		<property name="maxActive" value="#{db['database.pool.main.size']}" />
+	</bean>
+
+
+	<bean id="sqlSessionFactoryLog" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSourceLog" />
+		<property name="configLocation" value="classpath:/mybatis/mybatis-config.xml" />
+		<property name="mapperLocations" value="classpath:/mybatis/log-mappers/**/*.xml" />
+	</bean>	
+	
+    <bean id="logSqlSession" class="org.mybatis.spring.SqlSessionTemplate" destroy-method="clearCache">
+        <constructor-arg index="0" ref="sqlSessionFactoryLog" />
+    </bean>
+</beans>
+

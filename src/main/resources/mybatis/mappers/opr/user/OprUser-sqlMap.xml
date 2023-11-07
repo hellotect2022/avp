@@ -1,0 +1,366 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.smartcc.avp.pc.user.dao.UserDAO">
+
+	<sql id="whereGetUsers">
+		WHERE	1=1
+		<if test="period != null">
+			AND DATE_FORMAT(X.createDate,'%Y%m%d') BETWEEN REPLACE(#{searchParams.period.startYmd} , '-','') AND REPLACE(#{searchParams.period.endYmd},'-','')
+		</if>
+		<if test="searchCategory != null">
+			<if test="searchCategory == 'date'">
+<!-- 				AND DATE_FORMAT(CREATE_DATE,'%Y%m%d') BETWEEN REPLACE(#{searchParams.period.startYmd} , '-','') AND REPLACE(#{searchParams.period.endYmd},'-','')			</if> -->
+				AND DATE_FORMAT(X.createDate,'%Y%m%d')BETWEEN #{searchName} AND #{searchName}		
+			</if>
+			<if test="searchCategory == 'nickName'">
+				AND
+				X.nickName like CONCAT('%', #{searchName}, '%')
+			</if>
+			<if test="searchCategory == 'companyShop'">
+				AND
+				X.companyShopName like CONCAT('%', #{searchName}, '%')
+			</if>
+		</if>
+	</sql>
+	
+	<select id="getUserListCount" resultType="int">
+		SELECT count(*) from (
+		SELECT  TTU.NICK_NAME	as	nickName, 
+				SNS_TYPE 		as	snsType,
+				USER_TYPE 		as	userType, 
+				TTU.CREATE_DATE   as	createDate,
+		CONCAT((SELECT COMPANY_NAME FROM tb_tour_company WHERE COMPANY_ID = TTU.company_id) ,IFNULL((SELECT SHOP_NAME FROM tb_tour_shop WHERE SHOP_ID = TTU.shop_id),""))	as companyShopName 
+		FROM
+		 tb_tour_user TTU
+		  WHERE		
+		 TTU.USER_TYPE	!=	'SUPER'
+		) X
+		<include refid="whereGetUsers"/>
+	</select>
+	
+	<select id="getUserList" resultType="com.smartcc.avp.pc.user.model.response.UserListResponse">
+	SELECT X.* from (
+		SELECT  
+			IFNULL(TTU.NICK_NAME,"-")		as	nickName	, 
+			USER_ID 			as	userId		,
+			SNS_TYPE 			as	snsType		,
+			USER_TYPE 			as	userType	, 
+			PHONE 				as	phone	, 
+			DATE_FORMAT(TTU.CREATE_DATE,'%Y-%m-%d %H:%i:%s')	as	createDate	,
+			CONCAT(
+			IFNULL((SELECT COMPANY_NAME FROM tb_tour_company WHERE COMPANY_ID = TTU.company_id) ,IFNULL((SELECT SHOP_NAME FROM tb_tour_shop WHERE SHOP_ID = TTU.shop_id),"")),"-")	as companyShopName 
+		FROM
+		 tb_tour_user TTU
+		 WHERE		
+		 TTU.USER_TYPE	!=	'SUPER'
+	) X
+ 	<include refid="whereGetUsers"/>
+ 	ORDER BY X.userId DESC
+	<if test="pageInfo != null">
+	LIMIT	#{pageInfo.startRowNum},	#{pageInfo.size}
+	</if>
+	</select>
+	
+	<select id="getUserInfo" resultType="com.smartcc.avp.pc.user.model.response.UserDetailResponse">
+		SELECT  
+			IDX 					AS	userId		,
+			EMAIL 					AS	email		,
+			NICK_NAME				AS	nickName	, 
+            (SELECT COMPANY_NM FROM `AVP`.`AVP_COMPANY_TB` ACT, `AVP`.`AVP_USER_TB` AUT WHERE ACT.IDX = AUT.COMPANY_ID) as companyShopName,
+			SNS_TYPE 					AS	snsType		,
+			USER_TYPE 					AS	userType	, 
+			PHONE	 					AS	phone		, 
+			DATE_FORMAT(JOIN_DTTM,'%Y-%m-%d %H:%i:%s')	as	createDate	,
+			STORAGE_SIZE				AS	storageSize	
+		FROM
+		 	`AVP`.`AVP_USER_TB`
+		WHERE	IDX	=	#{userId}
+	</select>
+	
+	<delete id="delUser">
+		DELETE from tb_tour_user
+		WHERE	USER_ID	=	#{delUserId}
+	</delete>
+	
+	<select id="getSecessionListCount" resultType="int">
+		SELECT
+			COUNT(*)
+		FROM
+			`AVP`.`AVP_USER_TB`
+		WHERE
+			DEL_YN = 'Y'
+	</select>
+	
+	<select id="getSecessionList" resultType="com.smartcc.avp.pc.user.model.response.UserListResponse">
+		SELECT  
+			IDX 			as	userId		,
+			NICK_NAME		as	nickName	,
+            (SELECT COMPANY_NM FROM `AVP`.`AVP_COMPANY_TB` ACT, `AVP`.`AVP_USER_TB` AUT WHERE ACT.IDX = AUT.COMPANY_ID) as companyShopName,
+			USER_TYPE 			as	userType	, 
+			DATE_FORMAT(JOIN_DTTM,'%Y-%m-%d %H:%i:%s')	as	createDate	,
+            DATE_FORMAT(OUT_DTTM,'%Y-%m-%d %H:%i:%s')	as	secessionDate	
+		FROM
+			`AVP`.`AVP_USER_TB`
+		WHERE
+			DEL_YN	=	'Y'            
+	 	ORDER BY
+	 		IDX DESC
+		<if test="pageInfo != null">
+		LIMIT	#{pageInfo.startRowNum},	#{pageInfo.size}
+		</if>
+	</select>
+
+	<select id="getRequestQuotasCount" resultType="int">
+		SELECT
+			COUNT(*)
+		FROM
+			`AVP`.`AVP_QUOTA_TB`
+		WHERE
+			USER_ID = #{userId}
+		AND
+			ACCEPT_DTTM is NULL
+	</select>
+
+	<insert id="requestQuotas">
+	INSERT	INTO	`AVP`.`AVP_QUOTA_TB`
+			(
+				USER_ID,
+				STORAGE_SIZE
+			)
+		VALUES
+			(
+				#{userId},
+				#{storageSize}
+			)
+	</insert>
+
+	<update id="updateQuotas">
+		UPDATE	`AVP`.`AVP_USER_TB`	SET
+		STORAGE_SIZE	=	#{storageSize},
+		WHERE	IDX		=	#{userId}
+	</update>
+	
+	<update id="updateMyInfo">
+	UPDATE `AVP`.`AVP_USER_TB`	set
+		EMAIL		=	#{email},
+		PHONE		=	#{phone}
+	WHERE IDX	=	#{userId}
+	</update>
+	
+	<update id="updateSecession">
+	UPDATE `AVP`.`AVP_USER_TB`	set
+		RESTORE_ID		=	#{restoreId},
+		DEL_YN			=	#{delYn},
+		RESTORE_DTTM	=	DATE_FORMAT(NOW(),'%Y%m%d%H%i%s')
+	WHERE 
+		IDX				=	#{userId}
+	</update>
+	
+	<!-- Add. 2018. 10. 11. JBum | DB 스키마 별 User 목록 조회 -->
+	<select id="getUserListByDB" resultType="com.smartcc.avp.pc.user.model.response.UserListResponse">
+	SELECT X.* from (
+		SELECT  
+			IFNULL(TTU.NICK_NAME,"-")		as	nickName	, 
+			USER_ID 			as	userId		,
+			USER_NAME			as	userName	,
+			SNS_TYPE 			as	snsType		,
+			USER_TYPE 			as	userType	, 
+			PHONE 				as	phone	, 
+			DATE_FORMAT(TTU.CREATE_DATE,'%Y-%m-%d %H:%i:%s')	as	createDate	,
+			CONCAT(
+			IFNULL((SELECT COMPANY_NAME FROM tb_tour_company WHERE COMPANY_ID = TTU.company_id) ,IFNULL((SELECT SHOP_NAME FROM tb_tour_shop WHERE SHOP_ID = TTU.shop_id),"")),"-")	as companyShopName,
+			PUSH_TOKEN			as pushToken,
+			DATE_FORMAT(TTU.UPDATE_DATE,'%Y-%m-%d %H:%i:%s')	as	updateDate	,
+			CONFIRM_USER_ID		as confirmUserId,
+			COMPANY_NAME		as companyName			
+		FROM
+		 `${dbName}`.`tb_tour_user` TTU
+		WHERE
+			TTU.DEL_YN			=	'N'
+		 <if test="userType != null">
+		 AND	TTU.USER_TYPE	=	#{userType}
+		 </if>
+	) X
+ 	ORDER BY X.userId ASC
+	</select>
+
+	<update id="updateUserToken">
+		UPDATE `${dbName}`.`tb_tour_user`	set
+			USER_TYPE	=	#{req.userType},
+			PUSH_TOKEN		=	#{req.pushToken},
+			UPDATE_DATE		=	DATE_FORMAT(NOW(),'%Y%m%d%H%i%s')
+		WHERE 
+			PHONE	=	#{req.phoneNumber}
+		AND
+			USER_TYPE = #{req.userType}
+	</update>
+		
+	<select id="getUserInfoByPhone" resultType="com.smartcc.avp.pc.user.model.User">
+		SELECT  
+			USER_ID 					AS	userId		
+		FROM
+		 `${dbName}`.`tb_tour_user` TTU
+		WHERE
+			TTU.PHONE	=	#{phoneNumber}
+		AND
+			TTU.USER_TYPE	=	#{userType}
+	</select>
+	
+	<insert id="insertEmergency">
+	INSERT	INTO	`${dbName}`.`tb_tour_emergency_hist`
+			(
+				REPORT_TYPE,
+				REPORT_PHONE,
+				REPORT_LATITUDE,
+				REPORT_LONGITUDE,
+				REPORT_DATE
+			)
+		VALUES
+			(
+				#{req.reportType},
+				#{req.reportPhone},
+				#{req.reportLatitude},
+				#{req.reportLongitude},
+				DATE_FORMAT(NOW(),'%Y%m%d%H%i%s')
+			)
+	</insert>
+	
+	<select id="selectEmergency" resultType="int">
+	SELECT COUNT(*)	FROM `${dbName}`.`tb_tour_emergency_hist`
+	WHERE REPORT_PHONE = #{req.reportPhone}		
+		AND
+		  REPORT_TYPE = #{req.reportType}
+		AND
+		  RESPONSE_PHONE IS NULL
+	</select>
+	
+	<update id="updateEmergency">
+	UPDATE `${dbName}`.`tb_tour_emergency_hist`	set
+		RESPONSE_PHONE	=	#{req.responsePhone},
+		RESPONSE_RESULT		=	#{req.responseResult},
+		RESPONSE_DATE		=	DATE_FORMAT(NOW(),'%Y%m%d%H%i%s')
+	WHERE IDX	=	#{req.idx}
+	</update>
+	
+	<select id="getEmergencyHist" resultType="com.smartcc.avp.intfc.model.response.emergency.EmergencyHist">
+	SELECT
+		IDX						as idx,
+		REPORT_TYPE				as reportType,
+		REPORT_PHONE			as reportPhone,
+		(SELECT USER_NAME FROM `${dbName}`.`tb_tour_user` TTU WHERE TTU.PHONE = reportPhone AND TTU.USER_TYPE = 'NORMAL') as reportName,
+		REPORT_LATITUDE			as reportLatitude,
+		REPORT_LONGITUDE		as reportLongitude,
+		DATE_FORMAT(REPORT_DATE,'%Y-%m-%d %H:%i:%s')	as	reportDate,
+		RESPONSE_PHONE			as responsePhone,
+		(SELECT USER_NAME FROM `${dbName}`.`tb_tour_user` TTU WHERE TTU.PHONE = responsePhone AND TTU.USER_TYPE = 'ADMIN') as responseName,
+		RESPONSE_RESULT			as responseResult,
+		DATE_FORMAT(RESPONSE_DATE,'%Y-%m-%d %H:%i:%s')	as	responseDate
+	FROM
+		`${dbName}`.`tb_tour_emergency_hist`	
+	WHERE
+		REPORT_TYPE	=	#{req.reportType}
+	AND
+		REPORT_PHONE	=	#{req.reportPhone}
+	AND
+        RESPONSE_PHONE IS NULL
+	</select>
+	
+	<select id="getEmergencyHistAll" resultType="com.smartcc.avp.intfc.model.response.emergency.EmergencyHist">
+	SELECT
+		IDX						as idx,
+		REPORT_TYPE				as reportType,
+		REPORT_PHONE			as reportPhone,
+		(SELECT USER_NAME FROM `${dbName}`.`tb_tour_user` TTU WHERE TTU.PHONE = reportPhone AND TTU.USER_TYPE = 'NORMAL') as reportName,
+		REPORT_LATITUDE			as reportLatitude,
+		REPORT_LONGITUDE		as reportLongitude,
+		DATE_FORMAT(REPORT_DATE,'%Y-%m-%d %H:%i:%s')	as	reportDate,
+		RESPONSE_PHONE			as responsePhone,
+		(SELECT USER_NAME FROM `${dbName}`.`tb_tour_user` TTU WHERE TTU.PHONE = responsePhone AND TTU.USER_TYPE = 'ADMIN') as responseName,
+		RESPONSE_RESULT			as responseResult,
+		DATE_FORMAT(RESPONSE_DATE,'%Y-%m-%d %H:%i:%s')	as	responseDate
+	FROM
+		`${dbName}`.`tb_tour_emergency_hist` TTEH
+	ORDER BY
+		reportDate DESC
+	</select>
+	
+	<insert id="insertManagement">
+	INSERT	INTO	`${dbName}`.`tb_tour_user`
+			(
+				USER_NAME,
+				USER_TYPE,
+				COMPANY_NAME,
+				PHONE,
+				DEL_YN,
+				CREATE_DATE
+			)
+		VALUES
+			(
+				#{req.name},
+				#{req.userType},
+				#{req.belong},
+				#{req.phone},
+				'N',
+				DATE_FORMAT(NOW(),'%Y%m%d%H%i%s')
+			)
+	</insert>
+	
+	<update id="updateManagement">
+	UPDATE `${dbName}`.`tb_tour_user`	set
+		USER_NAME		=	#{req.name},
+		USER_TYPE		=	#{req.userType},
+		COMPANY_NAME	=	#{req.belong},
+		PHONE			=	#{req.phone},
+		DEL_YN			=	'N',
+		UPDATE_DATE		=	DATE_FORMAT(NOW(),'%Y%m%d%H%i%s')
+	WHERE 
+		PHONE			=	#{req.phone}
+	AND
+		USER_TYPE		=	#{req.userType}
+	</update>
+	
+	<update id="deleteManagement">
+	UPDATE `${dbName}`.`tb_tour_user`	set
+		DEL_YN			=	'Y',
+		UPDATE_DATE		=	DATE_FORMAT(NOW(),'%Y%m%d%H%i%s')
+	WHERE 
+		PHONE			=	#{req.phone}
+	AND
+		USER_TYPE		=	#{req.userType}
+	</update>
+	
+	<select id="selectUserByPhone" resultType="int">
+	SELECT
+		COUNT(*)
+	FROM
+		`${dbName}`.`tb_tour_user`
+	WHERE
+		PHONE	=	#{phone}
+	AND
+		USER_TYPE = #{userType}
+	AND
+		DEL_YN	=	'N'
+	</select>
+	
+	<select id="selectUserByPhoneNumber" resultType="int">
+	SELECT
+		COUNT(*)
+	FROM
+		`${dbName}`.`tb_tour_user`
+	WHERE
+		PHONE	=	#{phone}
+	AND
+		USER_TYPE	=	#{userType}
+	</select>
+	
+	<select id="selectAdminUser" resultType="int">
+	SELECT
+		COUNT(*)
+	FROM
+		`${dbName}`.`tb_tour_user`
+	WHERE
+		USER_TYPE = 'ADMIN'
+	</select>
+	
+</mapper>

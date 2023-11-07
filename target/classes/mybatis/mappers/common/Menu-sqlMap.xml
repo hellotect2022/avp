@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.smartcc.avp.common.menu.dao.MenuDAO">
+
+	<select id="getMenus" resultType="com.smartcc.avp.common.menu.model.Menu">
+		SELECT	MENU_ID			AS	menuId,
+				DEPTH			AS	depth,
+				SEQ				AS	seq,
+				PARENT_MENU_ID	AS	parentMenuId,
+				MENU_NAME		AS	menuName,
+				LINK_URL		AS	linkUrl				
+		FROM	`AVP`.`AVP_MENU_TB`
+		ORDER BY	DEPTH, SEQ
+	</select>
+	
+	<select id="getMenusFromSuper" resultType="com.smartcc.avp.common.menu.model.Menu">
+		SELECT	MENU_ID			AS	menuId,
+				DEPTH			AS	depth,
+				SEQ				AS	seq,
+				PARENT_MENU_ID	AS	parentMenuId,
+				MENU_NAME		AS	menuName,
+				LINK_URL		AS	linkUrl,
+				USER_TYPE		AS	userType
+		FROM	`AVP`.`AVP_MENU_TB`
+		WHERE	USER_TYPE is NULL
+        OR		USER_TYPE LIKE "%SUPER%"
+		ORDER BY	DEPTH, SEQ;
+       </select>
+       
+       <select id="getMenusFromAdmin" resultType="com.smartcc.avp.common.menu.model.Menu">
+        SELECT	MENU_ID			AS	menuId,
+				DEPTH			AS	depth,
+				SEQ				AS	seq,
+				PARENT_MENU_ID	AS	parentMenuId,
+				MENU_NAME		AS	menuName,
+				LINK_URL		AS	linkUrl,
+				USER_TYPE		AS	userType
+		FROM	`AVP`.`AVP_MENU_TB`
+		WHERE	USER_TYPE is NULL
+        OR		USER_TYPE LIKE "%ADMIN%"
+		ORDER BY	DEPTH, SEQ;
+       </select>
+       <select id="getMenusFromWorker" resultType="com.smartcc.avp.common.menu.model.Menu">
+        SELECT	MENU_ID			AS	menuId,
+				DEPTH			AS	depth,
+				SEQ				AS	seq,
+				PARENT_MENU_ID	AS	parentMenuId,
+				MENU_NAME		AS	menuName,
+				LINK_URL		AS	linkUrl,
+				USER_TYPE		AS	userType
+		FROM	`AVP`.`AVP_MENU_TB`
+		WHERE	USER_TYPE is NULL
+        OR		USER_TYPE LIKE "%WORKER%"
+		ORDER BY	DEPTH, SEQ;	
+	</select>	
+</mapper>

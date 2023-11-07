@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.smartcc.avp.pc.device.dao.DeviceDAO">
+
+	<select id="getDeviceListCount" resultType="int">
+		SELECT
+			count(*)
+		FROM
+			`AVP`.`AVP_DEVICE_TB`
+		WHERE
+			COMPANY_ID = #{companyId}
+		AND
+			(DEL_YN	=	'N'	OR	DEL_YN	is	NULL)
+		<if test="branchId != null">
+			AND
+				BRANCH_ID	=	#{branchId}
+		</if>
+	</select>
+
+	<select id="getDeviceList" resultType="com.smartcc.avp.pc.device.model.Device">
+		SELECT
+			IDX		as deviceId,
+		    COMPANY_ID	as companyId,
+		    (SELECT COMPANY_NM FROM `AVP`.`AVP_COMPANY_TB` ACT WHERE ACT.IDX = ADT.COMPANY_ID) as companyName,
+		    BRANCH_ID	as	branchId,
+		    (SELECT BRANCH_NM FROM `AVP`.`AVP_BRANCH_TB` ABT WHERE ABT.IDX = ADT.BRANCH_ID) as branchName,
+		    DEVICE_NM	as	deviceName,
+		    SERIAL		as	serial,
+		    LATITUDE	as	latitude,
+		    LONGITUDE	as	longitude,
+		    DEL_ID		as	delId,
+		    DEL_YN		as	delYn,
+		    CREATE_ID	as	createId,
+		    (
+		        SELECT
+		        	NICK_NAME
+		        FROM
+		        	`AVP`.`AVP_USER_TB` AUT
+		        WHERE
+		        	AUT.IDX = ADT.CREATE_ID
+	        )								as	createUser,
+		    DATE_FORMAT(CREATE_DTTM,'%Y-%m-%d %H:%i:%s') as	createDttm,
+		    UPDATE_ID	as	updateId,
+		    (
+		        SELECT
+			        NICK_NAME
+		        FROM
+			        `AVP`.`AVP_USER_TB` AUT
+		        WHERE
+		        	AUT.IDX = ADT.UPDATE_ID
+	        )								as	updateUser,
+		    DATE_FORMAT(UPDATE_DTTM,'%Y-%m-%d %H:%i:%s') as	updateDttm
+		FROM
+			`AVP`.`AVP_DEVICE_TB` ADT
+		WHERE 
+			COMPANY_ID	=	#{companyId}
+		AND
+			(DEL_YN = 'N' OR DEL_YN is NULL)
+		<if test="branchId != null">
+			AND
+				BRANCH_ID	=	#{branchId}
+		</if>
+		ORDER BY
+			UPDATE_DTTM DESC
+		<if test="pageInfo != null">
+			LIMIT	#{pageInfo.startRowNum},	#{pageInfo.size}
+		</if>
+	</select>
+
+	<select id="getDevice" resultType="com.smartcc.avp.pc.device.model.Device">
+		SELECT
+			IDX		as deviceId,
+		    COMPANY_ID	as companyId,
+		    (SELECT COMPANY_NM FROM `AVP`.`AVP_COMPANY_TB` ACT WHERE ACT.IDX = ADT.COMPANY_ID) as companyName,
+		    BRANCH_ID	as	branchId,
+		    (SELECT BRANCH_NM FROM `AVP`.`AVP_BRANCH_TB` ABT WHERE ABT.IDX = ADT.BRANCH_ID) as branchName,
+		    DEVICE_NM	as	deviceName,
+		    SERIAL		as	serial,
+		    LATITUDE	as	latitude,
+		    LONGITUDE	as	longitude,
+		    (
+		    	SELECT
+		    		ORDERLIST_NM
+		    	FROM
+		    		`AVP`.`AVP_ORDERLIST_TB` AOT
+		    	WHERE
+		    		AOT.DEVICE_ID = ADT.IDX
+		    )			as	orderlistName,
+		    DEL_ID		as	delId,
+		    DEL_YN		as	delYn,
+		    CREATE_ID	as	createId,
+		    (
+		        SELECT
+		        	NICK_NAME
+		        FROM
+		        	`AVP`.`AVP_USER_TB` AUT
+		        WHERE
+		        	AUT.IDX = ADT.CREATE_ID
+	        )								as	createUser,
+		    DATE_FORMAT(CREATE_DTTM,'%Y-%m-%d %H:%i:%s') as	createDttm,
+		    UPDATE_ID	as	updateId,
+		    (
+		        SELECT
+			        NICK_NAME
+		        FROM
+			        `AVP`.`AVP_USER_TB` AUT
+		        WHERE
+		        	AUT.IDX = ADT.UPDATE_ID
+	        )								as	updateUser,
+		    DATE_FORMAT(UPDATE_DTTM,'%Y-%m-%d %H:%i:%s') as	updateDttm
+		FROM
+			`AVP`.`AVP_DEVICE_TB` ADT
+		WHERE 
+			IDX	=	#{deviceId}
+		AND
+			(DEL_YN = 'N' OR DEL_YN is NULL)
+		ORDER BY
+			UPDATE_DTTM DESC
+	</select>
+
+	<insert id="insertDevice" useGeneratedKeys="true">
+		INSERT INTO `AVP`.`AVP_DEVICE_TB`
+			(
+				COMPANY_ID,
+				BRANCH_ID,
+				DEVICE_NM,
+				SERIAL,
+				DEL_YN,
+				CREATE_ID,
+				UPDATE_ID,
+				UPDATE_DTTM
+			)
+		VALUES
+			(
+				#{deviceInsert.companyId},
+				#{deviceInsert.branchId},
+				#{deviceInsert.deviceName},
+				#{deviceInsert.serial},
+				'N',
+				#{deviceInsert.createId},
+				#{deviceInsert.createId},
+				DATE_FORMAT(NOW(),'%Y%m%d%H%i%s')
+			)
+	</insert>
+	
+	<update id="updateDevice">
+		UPDATE `AVP`.`AVP_DEVICE_TB`	set
+				BRANCH_ID		=	#{deviceUpdate.branchId},
+				DEVICE_NM		=	#{deviceUpdate.deviceName},
+				SERIAL			=	#{deviceUpdate.serial},
+				UPDATE_ID		=	#{deviceUpdate.updateId},
+				UPDATE_DTTM		=	DATE_FORMAT(NOW(),'%Y%m%d%H%i%s')
+		WHERE 	IDX				=	#{deviceUpdate.deviceId}
+	</update>
+	
+	<update id="deleteDevice">
+		UPDATE `AVP`.`AVP_DEVICE_TB`	set
+				DEL_ID	=	#{userId},
+				DEL_YN	=	'Y'
+		WHERE 	IDX		=	#{deviceId}
+	</update>
+	
+	<select id="intfcGetDevice" resultType="com.smartcc.avp.pc.device.model.Device">
+		SELECT
+			IDX		as deviceId,
+		    COMPANY_ID	as companyId,
+		    (SELECT COMPANY_NM FROM `AVP`.`AVP_COMPANY_TB` ACT WHERE ACT.IDX = ADT.COMPANY_ID) as companyName,
+		    BRANCH_ID	as	branchId,
+		    (SELECT BRANCH_NM FROM `AVP`.`AVP_BRANCH_TB` ABT WHERE ABT.IDX = ADT.BRANCH_ID) as branchName,
+		    DEVICE_NM	as	deviceName,
+		    SERIAL		as	serial,
+		    DEL_ID		as	delId,
+		    DEL_YN		as	delYn,
+		    CREATE_ID	as	createId,
+		    (
+		        SELECT
+		        	NICK_NAME
+		        FROM
+		        	`AVP`.`AVP_USER_TB` AUT
+		        WHERE
+		        	AUT.IDX = ADT.CREATE_ID
+	        )								as	createUser,
+		    DATE_FORMAT(CREATE_DTTM,'%Y-%m-%d %H:%i:%s') as	createDttm,
+		    UPDATE_ID	as	updateId,
+		    (
+		        SELECT
+			        NICK_NAME
+		        FROM
+			        `AVP`.`AVP_USER_TB` AUT
+		        WHERE
+		        	AUT.IDX = ADT.UPDATE_ID
+	        )								as	updateUser,
+		    DATE_FORMAT(UPDATE_DTTM,'%Y-%m-%d %H:%i:%s') as	updateDttm
+		FROM
+			`AVP`.`AVP_DEVICE_TB` ADT
+		WHERE 
+			SERIAL	=	#{serial}
+		AND
+			(DEL_YN = 'N' OR DEL_YN is NULL)
+	</select>
+		
+</mapper>

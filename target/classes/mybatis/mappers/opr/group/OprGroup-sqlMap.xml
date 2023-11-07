@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.smartcc.avp.pc.group.dao.GroupDAO">
+
+<select id="getGroupList"  resultType="com.smartcc.avp.pc.group.model.GroupListResponse">
+	SELECT	GROUP_ID		as	groupId,
+			GROUP_NAME		as	groupName,
+			GROUP_DB_NAME	as	groupDbName
+	FROM `test`.`tb_tour_group`
+</select>
+
+<select id="getGroupDetail"  resultType="com.smartcc.avp.pc.group.model.GroupListResponse">
+	SELECT	GROUP_ID		as	groupId,
+			GROUP_NAME		as	groupName,
+			GROUP_DB_NAME	as	groupDbName
+	FROM `test`.`tb_tour_group`
+	WHERE GROUP_NAME = #{groupName}
+</select>
+
+</mapper>

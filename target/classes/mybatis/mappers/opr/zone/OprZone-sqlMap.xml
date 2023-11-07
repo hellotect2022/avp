@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.smartcc.avp.pc.zone.dao.ZoneDAO">
+
+	<select id="getZoneList" resultType="com.smartcc.avp.pc.zone.model.Zone">
+		SELECT
+			IDX					as	zoneId,
+			COMPANY_ID			as	companyId,
+		    ZONE				as	zone,
+		    LATITUDE			as	zoneLat,
+		    LONGITUDE			as	zoneLng,
+		    DEL_YN				as	delYn,
+		    CREATE_ID			as	createId,
+		    DATE_FORMAT(CREATE_DTTM,'%Y-%m-%d %H:%i:%s') as	createDttm,
+		    UPDATE_ID			as	updateId,
+		    DATE_FORMAT(UPDATE_DTTM,'%Y-%m-%d %H:%i:%s') as	updateDttm
+		FROM
+			`AVP`.`AVP_ZONE_TB` AZT
+		WHERE 
+			COMPANY_ID	=	#{companyId}
+		AND
+			(DEL_YN = 'N' OR DEL_YN is NULL)
+	</select>
+
+	<select id="getZone" resultType="com.smartcc.avp.pc.zone.model.Zone">
+		SELECT
+			IDX					as	zoneId,
+			COMPANY_ID			as	companyId,
+		    ZONE				as	zone,
+		    LATITUDE			as	zoneLat,
+		    LONGITUDE			as	zoneLng,
+		    DEL_YN				as	delYn,
+		    CREATE_ID			as	createId,
+		    DATE_FORMAT(CREATE_DTTM,'%Y-%m-%d %H:%i:%s') as	createDttm,
+		    UPDATE_ID			as	updateId,
+		    DATE_FORMAT(UPDATE_DTTM,'%Y-%m-%d %H:%i:%s') as	updateDttm
+		FROM
+			`AVP`.`AVP_ZONE_TB` AZT
+		WHERE 
+			IDX	=	#{zoneId}
+		AND
+			(DEL_YN = 'N' OR DEL_YN is NULL)
+	</select>
+
+	<insert id="insertZone" useGeneratedKeys="true">
+		INSERT INTO `AVP`.`AVP_ZONE_TB`
+			(
+				COMPANY_ID,
+				ZONE,
+				LATITUDE,
+				LONGITUDE,
+				CREATE_ID,
+				UPDATE_ID
+			)
+		VALUES
+			(
+				#{zoneInsert.companyId},
+				#{zoneInsert.zone},
+				#{zoneInsert.zoneLat},
+				#{zoneInsert.zoneLng},
+				#{zoneInsert.createId},
+				#{zoneInsert.updateId}
+			)
+	</insert>
+	
+	<update id="updateZone">
+		UPDATE `AVP`.`AVP_ZONE_TB`	set
+				ZONE			=	#{zoneUpdate.zone},
+				LATITUDE		=	#{zoneUpdate.zoneLat},
+				LONGITUDE		=	#{zoneUpdate.zoneLng},
+				UPDATE_ID		=	#{zoneUpdate.updateId}
+		WHERE 	IDX				=	#{zoneUpdate.zoneId}
+	</update>
+		
+	<update id="deleteZone">
+		UPDATE `AVP`.`AVP_ZONE_TB`	set
+				DEL_YN	=	'Y'
+		WHERE 	IDX		=	#{zoneId}
+	</update>
+
+	<insert id="insertZoneReco" useGeneratedKeys="true">
+		INSERT INTO `AVP`.`AVP_ZONE_RECO_TB`
+			(
+				ZONE_ID,
+				DEVICE_ID
+			)
+		VALUES
+			(
+				(SELECT IDX FROM `AVP`.`AVP_ZONE_TB` WHERE ZONE = #{zoneRecoInsert.body.zone}),
+				#{zoneRecoInsert.body.deviceId}
+			)
+	</insert>
+</mapper>

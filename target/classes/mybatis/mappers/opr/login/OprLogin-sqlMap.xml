@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.smartcc.avp.pc.login.dao.LoginDAO">
+
+	<select id="getUserInfo" resultType="com.smartcc.avp.pc.user.model.User">
+		SELECT	IDX				as	userId				,
+				NICK_NAME			as	nickName			,		
+				COMPANY_ID			as	companyId			,
+				BRANCH_ID			as	branchId			,
+				EMAIL				as	email				,
+				PHONE				as	phone				,
+				SNS_TYPE			as	snsType				,
+				SNS_ID				as	snsId				,
+				ACCESS_TOKEN		as	accessToken			,
+				GENDER				as	gender				,
+				USER_TYPE			as	userType			,
+				STORAGE_SIZE		as	storageSize			,
+				CONFIRM_ID			as	confirmId			,
+				CONFIRM_YN			as	confirmYn			,
+				DEL_ID				as	delId				,
+				DEL_YN				as	delYn				,
+				JOIN_DTTM			as	joinDttm			,
+				OUT_DTTM			as	outDttm				
+							
+		FROM	`AVP`.`AVP_USER_TB`
+		<if test="req.snsId != null">
+		WHERE	SNS_ID	=	#{req.snsId}
+		</if>
+		<if test="req.accessToken != null">
+		WHERE	ACCESS_TOKEN	=	#{req.accessToken}
+		</if>
+	</select>	
+	
+	
+	<update id="intfcUpdateUser">
+		UPDATE	tb_tour_user	SET
+	<if test="accessToken != null">
+		ACCESS_TOKEN			=	#{accessToken},
+	</if>
+	<if test="nickName != null">
+		NICK_NAME				=	#{nickName},
+	</if>
+		<if test="profileImageUrl != null">
+		PROFILE_IMAGE_URL		=	#{profileImageUrl},
+	</if>
+	<if test="thumbnailImageUrl != null">
+		THUMBNAIL_IMAGE_URL		=	#{thumbnailImageUrl},
+	</if>
+	<if test="couponOne != null">
+		COUPON_ONE				=	#{couponOne},
+	</if>
+	<if test="couponTwo != null">
+		COUPON_TWO				=	#{couponTwo},
+	</if>
+	<if test="couponThree != null">
+		COUPON_THREE			=	#{couponThree},
+	</if>
+	UPDATE_DATE		=	DATE_FORMAT(NOW(),'%Y%m%d%H%i%s')
+	<if test="snsId != null">
+		WHERE	SNS_ID		=	#{snsId}
+	</if>
+	<if test="userId != null">
+		WHERE	USER_ID		=	#{userId}
+	</if>
+	
+	</update>
+	
+	
+	
+	
+	
+	<insert id="intfcInsertUser" useGeneratedKeys="true" keyProperty="userId">
+	INSERT	INTO	tb_tour_user
+			(
+				SNS_ID,
+				SNS_TYPE,
+				ACCESS_TOKEN,
+				NICK_NAME,
+				PROFILE_IMAGE_URL,
+				THUMBNAIL_IMAGE_URL,
+				PHONE,
+				CREATE_DATE
+			)
+		VALUES
+			(
+				#{snsId}	,
+				#{snsType}	,
+				#{accessToken},
+				#{nickName},
+				#{profileImageUrl},
+				#{thumbnailImageUrl},
+				#{phone},
+				DATE_FORMAT(NOW(),'%Y%m%d%H%i%s')
+			)
+	</insert>
+	
+	
+	
+	
+	
+	<insert id="insertUser" useGeneratedKeys="true" keyProperty="userId">
+	INSERT	INTO	`AVP`.`AVP_USER_TB`
+			(
+				SNS_ID,
+				SNS_TYPE,
+				ACCESS_TOKEN,
+				NICK_NAME,
+				PHONE,
+				CONFIRM_YN
+			)
+		VALUES
+			(
+				#{snsId}	,
+				#{snsType}	,
+				#{accessToken},
+				#{nickName},
+				#{phone},
+				#{confirmYn}
+			)
+	</insert>
+	
+	<update id="updateUserData">
+	UPDATE	`AVP`.`AVP_USER_TB`	SET
+		COMPANY_ID		=	#{companyId}	,	
+	<if test="branchId != null">
+		BRANCH_ID		=	#{branchId}		,
+	</if>
+		EMAIL			=	#{email}	,
+		PHONE			=	#{phone}		,
+		USER_TYPE		=	#{userType}		,
+		STORAGE_SIZE	=	#{storageSize}		
+	WHERE	IDX		=	#{userId}
+	</update>
+	
+	<update id="updateUser">
+		UPDATE	tb_tour_user	SET
+	<if test="accessToken != null">
+		ACCESS_TOKEN			=	#{accessToken},
+	</if>
+	<if test="nickName != null">
+		NICK_NAME				=	#{nickName},
+	</if>
+		<if test="profileImageUrl != null">
+		PROFILE_IMAGE_URL		=	#{profileImageUrl},
+	</if>
+	<if test="thumbnailImageUrl != null">
+		THUMBNAIL_IMAGE_URL		=	#{thumbnailImageUrl},
+	</if>
+	<if test="gender != null">
+		GENDER		=	#{gender},
+	</if>
+	<if test="email != null">
+		USER_EMAIL		=	#{email},
+	</if>
+	UPDATE_DATE		=	DATE_FORMAT(NOW(),'%Y%m%d%H%i%s')
+	WHERE	USER_ID		=	#{userId}
+	</update>
+	
+	<select id="getUserInfoFromUserId" resultType="com.smartcc.avp.pc.user.model.User">
+			SELECT	IDX				as	userId				,		
+				NICK_NAME			as	nickName			,
+				COMPANY_ID			as	companyId			,
+				(SELECT COMPANY_NM FROM `AVP`.`AVP_COMPANY_TB` ACT, `AVP`.`AVP_USER_TB` AUT WHERE ACT.IDX = AUT.COMPANY_ID) as companyShopName,
+				BRANCH_ID			as	branchId			,
+				(SELECT BRANCH_NM FROM `AVP`.`AVP_BRANCH_TB` ABT, `AVP`.`AVP_USER_TB` AUT WHERE ABT.IDX = AUT.BRANCH_ID) as branchName,
+				EMAIL				as	email				,
+				PHONE				as	phone				,
+				SNS_TYPE			as	snsType				,
+				SNS_ID				as	snsId				,
+				ACCESS_TOKEN		as	accessToken			,
+				GENDER				as	gender				,
+				USER_TYPE			as	userType			,
+				STORAGE_SIZE		as	storageSize			,
+				CONFIRM_ID			as	confirmId			,
+				CONFIRM_YN			as	confirmYn			,
+				DEL_ID				as	delId				,
+				DEL_YN				as	delYn				,
+				JOIN_DTTM			as	joinDttm			,
+				OUT_DTTM			as	outDttm				
+							
+		FROM	`AVP`.`AVP_USER_TB`
+		WHERE	IDX	=	#{userId}
+	</select>
+	
+	<select id="getAllUserStorage" resultType="long">
+	SELECT	IFNULL(SUM(storage_size),0)
+	FROM	tb_tour_user
+	WHERE 	DATE_FORMAT(create_date ,'%Y%m') =  #{ym}
+	</select>
+	
+	<select id="getSellerUserStorage" resultType="long">
+		SELECT 	IFNULL(SUM(storage_size), 0)
+		FROM 	tb_tour_user
+		WHERE	DATE_FORMAT(create_date, '%Y%m') = #{ym}
+		AND		COMPANY_ID = #{companyId}
+		AND		DIVISION = #{groupDbName}
+		AND 	USER_TYPE = 'SELLER'
+	</select>
+	
+	<select id="getAdminUserStorage" resultType="long">
+		SELECT 	IFNULL(SUM(storage_size), 0)
+		FROM 	tb_tour_user
+		WHERE	DATE_FORMAT(create_date, '%Y%m') = #{ym}
+		AND		COMPANY_ID = #{companyId}
+		AND		DIVISION = #{groupDbName}
+		AND 	USER_TYPE = 'ADMIN'
+	</select>
+	
+	<select id="getMasterUser" resultType="com.smartcc.avp.pc.user.model.User">
+			SELECT	IDX			as	userId		,
+				COMPANY_ID		as	companyId	,	
+				NICK_NAME		as	nickName	,
+				USER_TYPE		as	userType	,
+				EMAIL			as	email		
+		FROM	`AVP`.`AVP_USER_TB`
+		WHERE	EMAIL		=	#{email}
+		AND		PASSWORD	=	#{pwd}
+	</select>
+	
+	<update id="updateSecession">
+		UPDATE `AVP`.`AVP_USER_TB`	SET
+			DEL_YN	=	'Y'
+		WHERE	IDX	=	#{userId}
+	</update>
+</mapper>

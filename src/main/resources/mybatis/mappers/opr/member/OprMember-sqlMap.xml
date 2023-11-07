@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.smartcc.avp.pc.member.dao.MemberDAO">
+
+
+	<sql id="whereGetUsers">
+		WHERE	1=1
+		<if test="period != null">
+			AND DATE_FORMAT(X.createDate,'%Y%m%d') BETWEEN REPLACE(#{searchParams.period.startYmd} , '-','') AND REPLACE(#{searchParams.period.endYmd},'-','')
+		</if>
+		<if test="searchCategory != null">
+			<if test="searchCategory == 'date'">
+<!-- 				AND DATE_FORMAT(CREATE_DATE,'%Y%m%d') BETWEEN REPLACE(#{searchParams.period.startYmd} , '-','') AND REPLACE(#{searchParams.period.endYmd},'-','')			</if> -->
+				AND DATE_FORMAT(X.createDate,'%Y%m%d')BETWEEN #{searchName} AND #{searchName}		
+			</if>
+			<if test="searchCategory == 'nickName'">
+				AND
+				X.nickName like CONCAT('%', #{searchName}, '%')
+			</if>
+			<if test="searchCategory == 'companyShop'">
+				AND
+				X.companyShopName like CONCAT('%', #{searchName}, '%')
+			</if>
+		
+		</if>
+	</sql>
+	
+	
+	<select id="getMemberAuthApplyListCount" resultType="int">
+		SELECT count(*) from (
+		SELECT  TTU.NICK_NAME	as	nickName, 
+				SNS_TYPE 		as	snsType,
+				USER_TYPE 		as	userType, 
+				TTU.CREATE_DATE   as	createDate
+		FROM
+		 tb_tour_user TTU
+			WHERE	TTU.AUTH_APPLY_YN	 	=	'N'
+			AND		
+			(TTU.MEMBER_VIEW_AUTH 	!=	'N'
+			OR		TTU.SHOP_UPDATE_AUTH	=	'N'
+			OR		TTU.PRODUCT_UPDATE_AUTH =	'N'	
+			)	
+			AND		TTU.USER_TYPE			!=	'SUPER'
+		<if test='userType != null'>
+			<if test='userType == "ADMIN"'>
+				AND		TTU.USER_TYPE	=	'SELLER'	
+				AND		TTU.COMPANY_ID	=	#{companyId}	
+			</if>
+			<if test='userType == "SUPER"'>
+				AND		TTU.USER_TYPE	=	'ADMIN'		
+			</if>
+		</if>
+		) X
+		<include refid="whereGetUsers"/>
+	</select>
+	
+	<select id="getMemberAuthApplyList" resultType="com.smartcc.avp.pc.member.model.response.MemberListResponse">
+		SELECT X.* from (
+			SELECT  
+				IFNULL(TTU.NICK_NAME,"-")		as	nickName	, 
+				USER_ID 			as	userId		,
+				SNS_TYPE 			as	snsType		,
+				USER_TYPE 			as	userType	, 
+				PHONE 				as	phone	, 
+				DATE_FORMAT(TTU.AUTH_CREATE_DATE,'%Y-%m-%d %H:%i:%s')	as	createDate	,
+				CONCAT(
+				IFNULL((SELECT COMPANY_NAME FROM ${dbName}.tb_tour_company WHERE COMPANY_ID = TTU.company_id) ,IFNULL((SELECT SHOP_NAME FROM ${dbName}.tb_tour_shop WHERE SHOP_ID = TTU.shop_id),"")),"-")	as companyShopName 
+			FROM
+			
+			 tb_tour_user TTU
+			WHERE	TTU.AUTH_APPLY_YN	 	=	'N'
+			AND		
+			(TTU.MEMBER_VIEW_AUTH 	!=	'N'
+			OR		TTU.SHOP_UPDATE_AUTH	=	'N'
+			OR		TTU.PRODUCT_UPDATE_AUTH =	'N'	
+			)	
+			AND		TTU.USER_TYPE			!=	'SUPER'
+			<if test='userType != null'>
+				<if test='userType == "ADMIN"'>
+					AND		TTU.USER_TYPE	=	'SELLER'
+					AND		TTU.COMPANY_ID	=	#{companyId}	
+					
+				</if>
+				<if test='userType == "SUPER"'>
+					AND		TTU.USER_TYPE	=	'ADMIN'		
+				</if>
+			</if>
+		) X
+	 	<include refid="whereGetUsers"/>
+	 		 	ORDER BY X.userId DESC
+		<if test="pageInfo != null">
+		LIMIT	#{pageInfo.startRowNum},	#{pageInfo.size}
+		</if>
+	</select>
+	
+	<select id="getMemberApplyListCount" resultType="int">
+		SELECT  
+			COUNT(*)
+		FROM
+			`AVP`.`AVP_USER_TB`
+		WHERE
+			CONFIRM_YN	=	'N'		
+		AND
+			USER_TYPE	=	'ADMIN'
+	</select>
+	
+	<select id="getMemberApplyList" resultType="com.smartcc.avp.pc.member.model.response.MemberListResponse">
+		SELECT  
+			IDX 				as	userId		,
+			(SELECT COMPANY_NM FROM `AVP`.`AVP_COMPANY_TB` ACT, `AVP`.`AVP_USER_TB` AUT WHERE ACT.IDX = AUT.COMPANY_ID) as companyShopName,
+            NICK_NAME			as	nickName	,
+			SNS_TYPE 			as	snsType		,
+			USER_TYPE 			as	userType	, 
+			PHONE 				as	phone		,
+            STORAGE_SIZE		as	storageSize	,
+			DATE_FORMAT(JOIN_DTTM,'%Y-%m-%d %H:%i:%s')	as	createDate	
+		FROM
+			`AVP`.`AVP_USER_TB`
+		WHERE
+			CONFIRM_YN	=	'N'		
+		AND
+			USER_TYPE	=	'ADMIN'
+ 		ORDER BY 
+ 		 	userId DESC
+		<if test="pageInfo != null">
+			LIMIT	#{pageInfo.startRowNum},	#{pageInfo.size}
+		</if>
+	</select>
+	
+	<select id="getMemberApplyListCountForAdmin" resultType="int">
+		SELECT  
+			COUNT(*)
+		FROM
+			`AVP`.`AVP_USER_TB`
+		WHERE
+			CONFIRM_YN	=	'N'		
+		AND
+			USER_TYPE	=	'WORKER'
+		AND
+			COMPANY_ID	=	#{companyId}
+	</select>
+	
+	<select id="getMemberApplyListForAdmin" resultType="com.smartcc.avp.pc.member.model.response.MemberListResponse">
+		SELECT  
+			IDX 				as	userId		,
+			(SELECT COMPANY_NM FROM `AVP`.`AVP_COMPANY_TB` ACT, `AVP`.`AVP_USER_TB` AUT WHERE ACT.IDX = AUT.COMPANY_ID) as companyShopName,
+            NICK_NAME			as	nickName	,
+			SNS_TYPE 			as	snsType		,
+			USER_TYPE 			as	userType	, 
+			PHONE 				as	phone		,
+            STORAGE_SIZE		as	storageSize	,
+			DATE_FORMAT(JOIN_DTTM,'%Y-%m-%d %H:%i:%s')	as	createDate	
+		FROM
+			`AVP`.`AVP_USER_TB`
+		WHERE
+			CONFIRM_YN	=	'N'		
+		AND
+			USER_TYPE	=	'WORKER'
+		AND
+			COMPANY_ID	=	#{companyId}
+ 		ORDER BY 
+ 		 	userId DESC
+		<if test="pageInfo != null">
+			LIMIT	#{pageInfo.startRowNum},	#{pageInfo.size}
+		</if>
+	</select>
+	
+	<select id="getMemberListCount" resultType="int">
+		SELECT
+			count(*)
+		FROM
+			`AVP`.`AVP_USER_TB`
+		WHERE
+			COMPANY_ID = #{companyId}
+		AND
+			CONFIRM_YN = 'Y'
+		AND
+		(
+			DEL_ID is NULL
+		OR
+			DEL_ID = 'N'
+		)
+	</select>
+	
+	<select id="getMemberList" resultType="com.smartcc.avp.pc.member.model.response.MemberListResponse">
+		SELECT
+			IDX	as	userId,
+			NICK_NAME	as nickName,
+			USER_TYPE	as	userType,
+			JOIN_DTTM	as	createDttm
+		FROM
+			AVP.AVP_USER_TB
+		WHERE
+			COMPANY_ID = #{companyId}
+		AND
+			IDX != #{userId}
+		AND
+			CONFIRM_YN = 'Y'
+		AND
+		(
+			DEL_ID is NULL
+		OR
+			DEL_ID = 'N'
+		)
+		ORDER BY JOIN_DTTM DESC
+		<if test="pageInfo != null">
+			LIMIT	#{pageInfo.startRowNum},	#{pageInfo.size}
+		</if>
+	</select>
+	
+	<select id="getUserInfo" resultType="com.smartcc.avp.pc.user.model.response.UserDetailResponse">
+		SELECT  
+			IFNULL(TTU.NICK_NAME,"-")		as	nickName	, 
+			USER_ID 			as	userId		,
+			SNS_TYPE 			as	snsType		,
+			USER_TYPE 			as	userType	, 
+			PHONE 				as	phone	, 
+			DATE_FORMAT(TTU.CREATE_DATE,'%Y-%m-%d %H:%i:%s')	as	createDate	,
+			CONCAT(
+			IFNULL((SELECT COMPANY_NAME FROM tb_tour_company WHERE COMPANY_ID = TTU.company_id) ,IFNULL((SELECT SHOP_NAME FROM tb_tour_shop WHERE SHOP_ID = TTU.shop_id),"")),"-")	as companyShopName 
+		FROM
+		 tb_tour_user TTU
+		WHERE	TTU.USER_ID	=	#{userId}
+	</select>
+	
+	<update id="memberAuthUpdate">
+		UPDATE tb_tour_user	SET	
+			<if test="memberViewAuth != null">
+				MEMBER_VIEW_AUTH	=	#{memberViewAuth}		,
+			</if>
+			<if test="shopUpdateAuth != null">
+				SHOP_UPDATE_AUTH	=	#{shopUpdateAuth}		,
+			</if>
+			<if test="productUpdateAuth != null">
+				PRODUCT_UPDATE_AUTH	=	#{productUpdateAuth}	,
+			</if>
+				AUTH_APPLY_YN		=	#{authApplyYn}
+		WHERE	USER_ID	=	#{userId}
+	</update>
+	
+	<update id="memberAppplyUpdate">
+		UPDATE `AVP`.`AVP_USER_TB`	SET	
+			CONFIRM_YN	=	'Y'	,
+			CONFIRM_ID	=	#{confirmUserId}
+		WHERE	IDX	=	#{userId}
+	</update>
+	
+	<update id="memberDelete">
+		UPDATE `AVP`.`AVP_USER_TB`	SET	
+			DEL_YN	=	'Y',
+			DEL_ID	=	#{delId}
+		WHERE	IDX	=	#{userId}
+	</update>
+	
+</mapper>

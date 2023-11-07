@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.smartcc.avp.pc.work.dao.WorkDAO">
+
+	<select id="getWorkerLoc" resultType="com.smartcc.avp.pc.work.model.Work">
+		SELECT
+			IDX												as idx,
+			COMPANY_ID										as companyId,
+			DEVICE_ID										as deviceId,
+			(SELECT DEVICE_NM FROM `AVP`.`AVP_DEVICE_TB` ADT WHERE ADT.IDX = DEVICE_ID) as deviceName,
+			LATITUDE										as latitude,
+			LONGITUDE										as longitude,
+			DATE_FORMAT(UPDATE_DTTM,'%Y-%m-%d %H:%i:%s')	as	updateDttm
+		FROM
+			`AVP`.`AVP_WORKER_LOC_TB`
+		WHERE
+			COMPANY_ID = #{companyId}
+	</select>
+
+	<insert id="insertWorkLoc" useGeneratedKeys="true">
+		INSERT INTO `AVP`.`AVP_WORKER_LOC_TB`
+			(
+				COMPANY_ID,
+				DEVICE_ID,
+				LATITUDE,
+				LONGITUDE
+			)
+		VALUES
+			(
+				#{workLocInsert.companyId},
+				#{workLocInsert.deviceId},
+				(SELECT LATITUDE FROM `AVP`.`AVP_ZONE_TB` AZT WHERE AZT.ZONE = #{workLocInsert.zone} AND (DEL_YN = 'N' OR DEL_YN IS NULL)),
+				(SELECT LONGITUDE FROM `AVP`.`AVP_ZONE_TB` AZT WHERE AZT.ZONE = #{workLocInsert.zone} AND (DEL_YN = 'N' OR DEL_YN IS NULL))
+			)
+	</insert>
+
+</mapper>

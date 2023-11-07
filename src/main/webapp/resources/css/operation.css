@@ -1,0 +1,24 @@
+html {
+width:100%;
+}
+.backLayer {
+	display:none;
+	background-color:#80000000; 
+	position:absolute;
+	left:0px;
+	top:0px;
+}
+
+.aside .aside_menu{width:100%;padding-top:40px}
+.aside .aside_menu .mainMenu{position:relative}
+.aside .aside_menu li{overflow:hidden;position:relative;width:100%;font-size:13px;color:#444}
+.aside .aside_menu li span,
+.aside .aside_menu li a{display:block;padding:11px 0 0 0;font-size:14px;font-weight:bold;color:#444;vertical-align:top}
+.aside .aside_menu li.on span,
+.aside .aside_menu li.on a{color:#00ae8c}
+.aside .aside_menu .smenu{width:100%;padding:10px 0}
+.aside .aside_menu .smenu li{margin-top:8px;border-bottom:0;font-size:12px;color:#858585}
+.aside .aside_menu .smenu li:first-child{margin-top:0}
+.aside .aside_menu .smenu li a{display:block;height:20px;background:none;padding:0 0 0 10px;font-size:12px;font-weight:normal;color:#666}
+
+

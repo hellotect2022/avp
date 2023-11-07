@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.smartcc.avp.common.file.dao.FileDAO">
+
+
+<!--	<insert id="checkFile" useGeneratedKeys="true" keyProperty="fileId">-->
+<!--		SELECT COUNT(*) FROM `AVP`.`AVP_FILE_TB`-->
+<!--		WHERE FILE_NAME = #{fileName}-->
+<!--		AND FILE_SRC = #{fileSrc}-->
+<!--	</insert>-->
+
+<!--	<update id="updateFile" useGeneratedKeys="true" keyProperty="fileId">-->
+<!--		UPDATE `AVP`.`AVP_FILE_TB`-->
+<!--		SET FILE_NAME = #{fileName}-->
+<!--		, ORIGINAL_FILE_NAME = #{originalFileName}-->
+<!--		,FILE_SIZE = #{fileSize}-->
+<!--		,FILE_SAVE_PATH = #{fileSavePath}-->
+<!--		,FILE_URL = #{fileUrl}-->
+<!--		,CREATE_ID	 = #{userId}-->
+<!--		,CREATE_TIME = DATE_FORMAT(NOW(),'%Y%m%d%H%i%s')-->
+<!--		,FILE_SRC = #{fileSrc}-->
+<!--		WHERE 1=1-->
+<!--		AND FILE_NAME = #{fileName}-->
+<!--		AND FILE_SRC = #{fileSrc}-->
+<!--	</update>-->
+
+	<insert id="insertFile" useGeneratedKeys="true" keyProperty="fileId">
+	INSERT INTO `AVP`.`AVP_FILE_TB`
+		(
+			FILE_NAME			,
+			ORIGINAL_FILE_NAME	,
+			FILE_SIZE			,
+			FILE_SAVE_PATH		,
+			FILE_URL			,
+			CREATE_ID			,
+			CREATE_TIME         ,
+		    FILE_SRC
+		)VALUES(
+		   	#{fileName}			,
+		   	#{originalFileName}	,
+		   	#{fileSize}			,
+		   	#{fileSavePath}		,
+		   	#{fileUrl}			,
+		   	#{userId}			,
+			DATE_FORMAT(NOW(),'%Y%m%d%H%i%s'),
+		    #{fileSrc}
+		)	
+	</insert>
+	
+	<select id="getFile" resultType="com.smartcc.avp.common.FileData">
+	SELECT FILE_NAME	as	fileName,
+		   CREATE_ID	as	createId,
+		   FILE_SIZE	as	fileSize
+	FROM	`AVP`.`AVP_FILE_TB`
+	WHERE 	FILE_ID	=	#{fileId}
+	
+	</select>
+	<delete id="deleteFile">
+	DELETE	FROM `AVP`.`AVP_FILE_TB`
+	WHERE	FILE_ID	=	#{fileId}
+	</delete>
+	
+	<delete id="deleteFileArr">
+		DELETE	FROM `AVP`.`AVP_FILE_TB`
+		WHERE	FILE_ID	IN
+			<foreach collection="list" item="item" index="index" separator="," open="(" close=")">
+				#{item}
+			</foreach>
+	</delete>
+	
+	<select id="getMonthlyUsedSize" resultType="java.lang.Long">
+	SELECT	IFNULL(SUM(file_size),0) 
+	FROM	`AVP`.`AVP_FILE_TB` 
+	WHERE DATE_FORMAT(CREATE_TIME,'%Y%m%d') 
+	<if test="startDay != null">
+		BETWEEN #{startDay} AND #{endDay}
+	</if>
+	</select>
+	
+	<select id="getMyUsedSize" resultType="java.lang.Long">
+	SELECT	IFNULL(SUM(file_size),0) 
+	FROM	`AVP`.`AVP_FILE_TB` 
+	WHERE CREATE_ID	=	#{userId}
+	</select>
+	
+	<select id="getFileByName" resultType="com.smartcc.avp.common.FileData">
+	SELECT FILE_ID	as	fileId,
+		   CREATE_ID	as	createId,
+		   FILE_SIZE	as	fileSize
+	FROM	`AVP`.`AVP_FILE_TB`
+	WHERE 	FILE_NAME	=	#{fileName}
+	</select>
+	
+</mapper>

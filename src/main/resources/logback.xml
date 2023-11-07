@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration>
+<configuration debug="false">
+    <property resource="config/local/log-style.properties" />
+    <property resource="config/common.properties" />
+        
+    <jmxConfigurator />
+    
+    <!-- Appenders -->
+    
+    <!-- Console appender -->
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    	<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+    		<level>${log.stdout.level}</level>
+    	</filter>
+    	<withJansi>true</withJansi>
+    	<encoder>
+            <pattern>${log.pattern}</pattern>
+        </encoder>
+    </appender>
+    
+    <appender name="FILEOUT" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    	<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+    		<level>${log.fileout.level}</level>
+    	</filter>
+    	
+    	<File>${catalina.base}/${log.path}</File>
+    	<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+    		<FileNamePattern>
+    		${catalina.base}/${log.filename.pattern}
+    		</FileNamePattern>
+    		<maxHistory>90</maxHistory>
+    		<timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+    			<maxFileSize>200MB</maxFileSize>
+    		</timeBasedFileNamingAndTriggeringPolicy>
+    	</rollingPolicy>
+    	
+    	<layout class="ch.qos.logback.classic.PatternLayout">
+    		<pattern>${log.pattern}</pattern>
+    	</layout>
+    </appender>
+    <!-- Appenders end-->
+    
+    <!-- Loggers -->
+    <logger name="org.springframework" level="${log.root.level}"/>
+    <logger name="org.apache.commons.digester" level="${log.root.level}"/>
+    <logger name="org.springframework.security" level="${log.root.level}"/>
+    <logger name="java.sql" level="${log.root.level}"/>
+    <!-- root logger -->
+    <root level="${log.root.level}">
+        <appender-ref ref="STDOUT"/>
+        <appender-ref ref="FILEOUT"/>
+    </root>
+    
+    <!-- Loggers end -->
+</configuration>

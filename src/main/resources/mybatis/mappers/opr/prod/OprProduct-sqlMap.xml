@@ -1,0 +1,355 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.smartcc.avp.pc.product.dao.ProductDAO">
+
+	<select id="getProdList" resultType="String">
+		SELECT TARGET_NAME
+		FROM `${dbName}`.`tb_tour_product` 
+		WHERE PROD_ID = 1
+	</select>
+	
+	<sql id="whereGetProdcuts">
+		<if test="period != null">
+			AND DATE_FORMAT(TTC.CREATE_DATE,'%Y%m%d') BETWEEN REPLACE(#{searchParams.period.startYmd} , '-','') AND REPLACE(#{searchParams.period.endYmd},'-','')
+		</if>
+		<if test="searchCategory != null">
+			<if test="searchCategory == 'date'">
+				AND DATE_FORMAT(TTP.CREATE_DATE,'%Y%m%d')BETWEEN #{searchName} AND #{searchName}		
+			</if>
+			<if test="searchCategory == 'prodname'">
+				AND
+				TTP.PRODUCT_NAME like CONCAT('%', #{searchName}, '%')
+			</if>
+		</if>
+	</sql>
+	
+		
+	<select id="getProductListCountForSeller" resultType="int">
+		SELECT	count(*)
+		FROM 	`${dbName}`.`tb_tour_product` TTP
+		JOIN	`${dbName}`.`tb_tour_shop`	TTS
+		ON		TTP.SHOP_ID	=	TTS.SHOP_ID 
+		JOIN	`${dbName}`.`tb_tour_company`	TTC
+		ON		TTS.COMPANY_ID	=	TTC.COMPANY_ID
+		WHERE  TTP.CREATE_ID	=	#{userId}
+		<include refid="whereGetProdcuts"/>
+	</select>
+	
+	
+	<select id="getProductListForSeller" resultType="com.smartcc.avp.pc.product.model.response.ProductListResponse">
+		SELECT	TTC.COMPANY_NAME	as	companyName	,
+				TTS.SHOP_NAME		as	shopName	, 
+				TTP.PRODUCT_NAME	as	productName	, 
+				TTP.PRODUCT_ID		as	productId 	,
+				DATE_FORMAT(TTS.CREATE_DATE,'%Y-%m-%d')	AS	createDate		
+		FROM 	`${dbName}`.`tb_tour_product` TTP
+		JOIN	`${dbName}`.`tb_tour_shop`	TTS
+		ON		TTP.SHOP_ID	=	TTS.SHOP_ID 
+		JOIN	`${dbName}`.`tb_tour_company`	TTC
+		ON		TTS.COMPANY_ID	=	TTC.COMPANY_ID	
+		WHERE   TTP.CREATE_ID	=	#{userId}
+		<include refid="whereGetProdcuts"/>
+		ORDER BY TTP.PRODUCT_ID DESC
+		<if test="pageInfo != null">
+		LIMIT	#{pageInfo.startRowNum},	#{pageInfo.size}
+		</if>
+	</select>
+	
+		
+	<select id="getProductListCountForAdmin" resultType="int">
+		SELECT
+			count(*)
+		FROM
+			`AVP`.`AVP_ITEM_TB` AIT
+		WHERE
+			COMPANY_ID = #{companyId}
+		AND
+		(
+			(SELECT ABT.DEL_YN FROM `AVP`.`AVP_BRANCH_TB` ABT WHERE ABT.IDX = AIT.BRANCH_ID) = 'N'
+		OR
+			(SELECT ABT.DEL_YN FROM `AVP`.`AVP_BRANCH_TB` ABT WHERE ABT.IDX = AIT.BRANCH_ID) is NULL
+		)
+		AND
+			(DEL_YN	=	'N'	OR	DEL_YN	is	NULL)
+		<include refid="whereGetProdcuts"/>
+	</select>
+	
+	
+	<select id="getProductListForAdmin" resultType="com.smartcc.avp.pc.product.model.response.ProductListResponse">
+		SELECT
+			IDX					as	itemId,
+			COMPANY_ID			as	companyId,
+			BRANCH_ID			as	branchId,
+			(SELECT COMPANY_NM FROM `AVP`.`AVP_COMPANY_TB` WHERE IDX = companyId) as companyName,
+            (SELECT BRANCH_NM FROM `AVP`.`AVP_BRANCH_TB` WHERE COMPANY_ID = companyId AND IDX = branchId) as branchName,
+			ITEM_NM				as	itemName,
+			BARCODE				as	barcode,
+			BARCODE_TYPE		as	barcodeType,
+			ZONE				as	zone,
+			LOCAL				as	local,
+			LOCATION			as	location,
+			DEL_ID				as	delId,
+			DEL_YN				as	delYn,
+			CREATE_ID			as	createId,
+			(SELECT NICK_NAME FROM `AVP`.`AVP_USER_TB` WHERE IDX = createId) as createName,
+			DATE_FORMAT(CREATE_DTTM,'%Y-%m-%d %H:%i:%s')			as	createDttm,
+			UPDATE_ID			as	updateId,
+            (SELECT NICK_NAME FROM `AVP`.`AVP_USER_TB` WHERE IDX = updateId) as updateName,
+			DATE_FORMAT(UPDATE_DTTM,'%Y-%m-%d %H:%i:%s')			as	updateDttm
+		FROM
+			`AVP`.`AVP_ITEM_TB` AIT
+		WHERE
+			COMPANY_ID = #{companyId}
+		AND
+		(
+			(SELECT ABT.DEL_YN FROM `AVP`.`AVP_BRANCH_TB` ABT WHERE ABT.IDX = AIT.BRANCH_ID) = 'N'
+		OR
+			(SELECT ABT.DEL_YN FROM `AVP`.`AVP_BRANCH_TB` ABT WHERE ABT.IDX = AIT.BRANCH_ID) is NULL
+		)
+		AND
+			(DEL_YN	=	'N'	OR	DEL_YN	is	NULL)
+		<include refid="whereGetProdcuts"/>
+		ORDER BY UPDATE_DTTM DESC
+		<if test="pageInfo != null">
+		LIMIT	#{pageInfo.startRowNum},	#{pageInfo.size}
+		</if>
+	</select>
+	
+	<select id="getProductListCount" resultType="int">
+		SELECT
+			count(*)
+		FROM
+			`AVP`.`AVP_ITEM_TB`
+		WHERE
+			(DEL_YN	=	'N'	OR	DEL_YN	is	NULL)
+		<include refid="whereGetProdcuts"/>
+	</select>
+	
+	<select id="getProductList" resultType="com.smartcc.avp.pc.product.model.response.ProductListResponse">
+		SELECT
+			IDX					as	itemId,
+			COMPANY_ID			as	companyId,
+			BRANCH_ID			as	branchId,
+			(SELECT COMPANY_NM FROM `AVP`.`AVP_COMPANY_TB` WHERE IDX = companyId) as companyName,
+            (SELECT BRANCH_NM FROM `AVP`.`AVP_BRANCH_TB` WHERE COMPANY_ID = companyId AND IDX = branchId) as branchName,
+			ITEM_NM				as	itemName,
+			BARCODE				as	barcode,
+			BARCODE_TYPE		as	barcodeType,
+			ZONE				as	zone,
+			LOCAL				as	local,
+			LOCATION			as	location,
+			DEL_ID				as	delId,
+			DEL_YN				as	delYn,
+			CREATE_ID			as	createId,
+			(SELECT NICK_NAME FROM `AVP`.`AVP_USER_TB` WHERE IDX = createId) as createName,
+			DATE_FORMAT(CREATE_DTTM,'%Y-%m-%d %H:%i:%s')			as	createDttm,
+			UPDATE_ID			as	updateId,
+            (SELECT NICK_NAME FROM `AVP`.`AVP_USER_TB` WHERE IDX = updateId) as updateName,
+			DATE_FORMAT(UPDATE_DTTM,'%Y-%m-%d %H:%i:%s')			as	updateDttm
+		FROM
+			`AVP`.`AVP_ITEM_TB`
+		WHERE
+			(DEL_YN	=	'N'	OR	DEL_YN	is	NULL)
+		<include refid="whereGetProdcuts"/>
+		ORDER BY UPDATE_DTTM DESC
+		<if test="pageInfo != null">
+		LIMIT	#{pageInfo.startRowNum},	#{pageInfo.size}
+		</if>
+	</select>
+	
+	<insert id="insertProduct">
+	INSERT INTO `AVP`.`AVP_ITEM_TB`
+		(
+			COMPANY_ID,
+			BRANCH_ID,
+			ITEM_NM,
+			BARCODE,
+			BARCODE_TYPE,
+			ZONE,
+			LOCAL,
+			LOCATION,
+			CREATE_ID,
+			UPDATE_ID,
+			UPDATE_DTTM
+		)VALUES(
+			#{itemInsert.companyId},
+			#{itemInsert.branchId},
+			#{itemInsert.itemName},
+			#{itemInsert.barcode},
+			#{itemInsert.barcodeType},
+			#{itemInsert.zone},
+			#{itemInsert.local},
+			#{itemInsert.location},
+			#{itemInsert.createId},
+			#{itemInsert.createId},
+			DATE_FORMAT(NOW(),'%Y%m%d%H%i%s')
+		)
+	</insert>
+	
+	<select id="productDetailPage" resultType="com.smartcc.avp.pc.product.model.response.ProductDetailResponse">
+	SELECT
+			IDX					as	itemId,
+			COMPANY_ID			as	companyId,
+			BRANCH_ID			as	branchId,
+			(SELECT COMPANY_NM FROM `AVP`.`AVP_COMPANY_TB` WHERE IDX = companyId) as companyName,
+            (SELECT BRANCH_NM FROM `AVP`.`AVP_BRANCH_TB` WHERE COMPANY_ID = companyId AND IDX = branchId) as branchName,
+			ITEM_NM				as	itemName,
+			BARCODE				as	barcode,
+			BARCODE_TYPE		as	barcodeType,
+			ZONE				as	zone,
+			LOCAL				as	local,
+			LOCATION			as	location,
+			DEL_ID				as	delId,
+			DEL_YN				as	delYn,
+			CREATE_ID			as	createId,
+			(SELECT NICK_NAME FROM `AVP`.`AVP_USER_TB` WHERE IDX = createId) as createName,
+			DATE_FORMAT(CREATE_DTTM,'%Y-%m-%d %H:%i:%s')			as	createDttm,
+			UPDATE_ID			as	updateId,
+            (SELECT NICK_NAME FROM `AVP`.`AVP_USER_TB` WHERE IDX = updateId) as updateName,
+			DATE_FORMAT(UPDATE_DTTM,'%Y-%m-%d %H:%i:%s')			as	updateDttm
+		FROM
+			`AVP`.`AVP_ITEM_TB`
+		WHERE
+			IDX = #{productId}
+		AND
+			(DEL_YN = 'N' OR DEL_YN is NULL)
+	</select>
+	
+	<update id="updateProduct">
+	UPDATE `AVP`.`AVP_ITEM_TB`	set
+			BRANCH_ID		=	#{prodUpdate.branchId},
+			ITEM_NM			=	#{prodUpdate.itemName},
+			BARCODE			=	#{prodUpdate.barcode},
+			BARCODE_TYPE	=	#{prodUpdate.barcodeType},
+			ZONE			=	#{prodUpdate.zone},
+			LOCAL			=	#{prodUpdate.local},
+			LOCATION		=	#{prodUpdate.location},
+			UPDATE_ID		=	#{prodUpdate.updateId},
+			UPDATE_DTTM		=	DATE_FORMAT(NOW(),'%Y%m%d%H%i%s')
+	WHERE 	IDX				=	#{prodUpdate.itemId}
+	</update>
+	
+	<!-- <delete id="deleteProduct">
+		DELETE	FROM
+			`AVP`.`AVP_ITEM_TB`
+		WHERE
+			IDX	=	#{productId}
+	</delete> -->
+	
+	<update id="deleteProduct">
+		UPDATE
+			`AVP`.`AVP_ITEM_TB`
+		SET
+			DEL_ID		=	#{userId},
+			DEL_YN		=	'Y'
+		WHERE
+			IDX				=	#{productId}
+	</update>
+	
+	<select id="checkProductFromAdmin" resultType="int">
+		SELECT COUNT(*)
+		FROM `${dbName}`.`tb_tour_product`
+		WHERE	PRODUCT_ID	=	#{productId}	
+		AND	SHOP_ID	in	(SELECT SHOP_ID FROM	`${dbName}`.`tb_tour_shop`	WHERE COMPANY_ID	=	#{companyId})
+	</select>
+	<select id="checkProductFromSeller" resultType="int">
+		SELECT COUNT(*)
+		FROM `${dbName}`.`tb_tour_product`
+		WHERE	CREATE_ID	=	#{userId}	AND	PRODUCT_ID	=	#{productId}	
+	</select>
+	
+	
+	<delete id="deleteProductArr">
+		DELETE	FROM `${dbName}`.`tb_tour_product`
+		WHERE	PRODUCT_ID	IN
+			<foreach collection="list" item="item" index="index" separator="," open="(" close=")">
+				#{item}
+			</foreach>
+	</delete>
+	
+	<select id="getProductListFromShopId" resultType="com.smartcc.avp.pc.product.model.response.ProductListResponse">
+		SELECT	TTC.COMPANY_NAME	as	companyName	,
+				TTS.SHOP_NAME		as	shopName	, 
+				TTP.PRODUCT_NAME	as	productName	, 
+				TTP.PRODUCT_ID		as	productId 	,
+				DATE_FORMAT(TTP.CREATE_DATE,'%Y-%m-%d')	AS	createDate		
+		FROM 	`${dbName}`.`tb_tour_product` TTP
+		JOIN	`${dbName}`.`tb_tour_shop`	TTS
+		ON		TTP.SHOP_ID	=	TTS.SHOP_ID 
+		JOIN	`${dbName}`.`tb_tour_company`	TTC
+		ON		TTS.COMPANY_ID	=	TTC.COMPANY_ID	
+		WHERE	TTP.SHOP_ID = #{shopId}
+	</select>
+	
+	<select id="getBarcodeTypeList" resultType="String">
+		SELECT
+			BARCODE_TYPE	as barcodeType
+		FROM
+			`AVP`.`AVP_BARCODE_TB` 
+	</select>
+	
+	<select id="getProductListByBranchCount" resultType="int">
+		SELECT
+			count(*)
+		FROM
+			`AVP`.`AVP_ITEM_TB` AIT
+		WHERE
+			COMPANY_ID = #{companyId}
+		AND
+			BRANCH_ID	=	#{branchId}
+		AND
+		(
+			(SELECT ABT.DEL_YN FROM `AVP`.`AVP_BRANCH_TB` ABT WHERE ABT.IDX = AIT.BRANCH_ID) = 'N'
+		OR
+			(SELECT ABT.DEL_YN FROM `AVP`.`AVP_BRANCH_TB` ABT WHERE ABT.IDX = AIT.BRANCH_ID) is NULL
+		)
+		AND
+			(DEL_YN	=	'N'	OR	DEL_YN	is	NULL)
+		<include refid="whereGetProdcuts"/>
+	</select>
+	
+	
+	<select id="getProductListByBranch" resultType="com.smartcc.avp.pc.product.model.response.ProductListResponse">
+		SELECT
+			IDX					as	itemId,
+			COMPANY_ID			as	companyId,
+			BRANCH_ID			as	branchId,
+			(SELECT COMPANY_NM FROM `AVP`.`AVP_COMPANY_TB` WHERE IDX = companyId) as companyName,
+            (SELECT BRANCH_NM FROM `AVP`.`AVP_BRANCH_TB` WHERE COMPANY_ID = companyId AND IDX = branchId) as branchName,
+			ITEM_NM				as	itemName,
+			BARCODE				as	barcode,
+			BARCODE_TYPE		as	barcodeType,
+			ZONE				as	zone,
+			LOCAL				as	local,
+			LOCATION			as	location,
+			DEL_ID				as	delId,
+			DEL_YN				as	delYn,
+			CREATE_ID			as	createId,
+			(SELECT NICK_NAME FROM `AVP`.`AVP_USER_TB` WHERE IDX = createId) as createName,
+			DATE_FORMAT(CREATE_DTTM,'%Y-%m-%d %H:%i:%s')			as	createDttm,
+			UPDATE_ID			as	updateId,
+            (SELECT NICK_NAME FROM `AVP`.`AVP_USER_TB` WHERE IDX = updateId) as updateName,
+			DATE_FORMAT(UPDATE_DTTM,'%Y-%m-%d %H:%i:%s')			as	updateDttm
+		FROM
+			`AVP`.`AVP_ITEM_TB` AIT
+		WHERE
+			COMPANY_ID = #{companyId}
+		AND
+			BRANCH_ID	=	#{branchId}
+		AND
+		(
+			(SELECT ABT.DEL_YN FROM `AVP`.`AVP_BRANCH_TB` ABT WHERE ABT.IDX = AIT.BRANCH_ID) = 'N'
+		OR
+			(SELECT ABT.DEL_YN FROM `AVP`.`AVP_BRANCH_TB` ABT WHERE ABT.IDX = AIT.BRANCH_ID) is NULL
+		)
+		AND
+			(DEL_YN	=	'N'	OR	DEL_YN	is	NULL)
+		<include refid="whereGetProdcuts"/>
+		ORDER BY UPDATE_DTTM DESC
+		<if test="pageInfo != null">
+		LIMIT	#{pageInfo.startRowNum},	#{pageInfo.size}
+		</if>
+	</select>
+	
+</mapper>

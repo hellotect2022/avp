@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE tiles-definitions PUBLIC "-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN" "http://tiles.apache.org/dtds/tiles-config_3_0.dtd">
+<tiles-definitions>
+	<!-- =======================================================  -->
+	<!-- Master definition  									  -->
+	<!-- =======================================================  -->
+    <!-- Default Template -->
+    <definition name=".pc" 		template="/WEB-INF/avp/layout/pc/oprLayout.jsp">
+        <put-attribute name="css"     value="/WEB-INF/avp/layout/pc/css/opr-css.jsp" />
+        <put-attribute name="js"      value="/WEB-INF/avp/layout/pc/js/opr-js.jsp" />
+        <put-attribute name="header"  value="/WEB-INF/avp/layout/pc/part/TopPage.jsp" />
+        <put-attribute name="left"  value="/WEB-INF/avp/layout/pc/part/LeftPage.jsp" />
+        <put-attribute name="content" value="/WEB-INF/avp/pages/blank.jsp" />
+        <put-attribute name="footer"  value="/WEB-INF/avp/layout/pc/part/BottomPage.jsp" />
+    </definition>
+    <definition name=".login" 		template="/WEB-INF/avp/layout/login/loginLayout.jsp">
+        <put-attribute name="css"     value="/WEB-INF/avp/layout/login/css/opr-css.jsp" />
+        <put-attribute name="js"      value="/WEB-INF/avp/layout/login/js/opr-js.jsp" />
+        <put-attribute name="header"  value="/WEB-INF/avp/layout/login/part/TopPage.jsp" />
+        <put-attribute name="content" value="/WEB-INF/avp/pages/blank.jsp" />
+    </definition>
+    
+	<definition name="/pc/*" extends=".login">
+		<put-attribute name="content" value="/WEB-INF/avp/pages/pc/{1}.jsp" />
+	</definition>
+	<definition name="/pc/*/*" extends=".pc">
+		<put-attribute name="content" value="/WEB-INF/avp/pages/pc/{1}/{2}.jsp" />
+	</definition>
+	
+</tiles-definitions>

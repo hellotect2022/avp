@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.smartcc.avp.pc.ar.dao.ArDAO">
+
+	
+	<insert id="insertAr">
+		INSERT	INTO	`AVP`.`AVP_AR_TB`
+			(
+				COMPANY_ID		,
+				BRANCH_ID		,
+				ITEM_ID			,
+				AR_NM			,
+				TARGET_ID		,
+				METADATA		,
+				IMG_SIZE		,
+				AR_IMG_ID		,
+				RECOG_IMG_ID	,
+				CREATE_ID		,
+				UPDATE_ID		,
+				UPDATE_DTTM		,
+				SCRIPT
+			)
+		VALUES
+			(
+				#{arInfo.companyId}						,
+				(SELECT ABT.IDX FROM `AVP`.`AVP_BRANCH_TB` ABT, `AVP`.`AVP_ITEM_TB` AIT WHERE ABT.IDX = AIT.BRANCH_ID AND AIT.IDX = #{arInfo.itemId}),
+				#{arInfo.itemId}						,
+				#{arInfo.arName}						,
+				#{arInfo.targetId}						,
+				#{arInfo.metaData}						,
+				#{arInfo.arSize}						,
+				#{arInfo.arImgId}						,
+				#{arInfo.recogImgId}					,
+				#{arInfo.createId}						,
+				#{arInfo.updateId}						,
+				DATE_FORMAT(NOW(),'%Y%m%d%H%i%s')		,
+				#{arInfo.arScript}
+			)
+	</insert>
+	
+	
+	<sql id="whereGetArs">
+		<if test="period != null">
+			AND DATE_FORMAT(CREATE_DATE,'%Y%m%d') BETWEEN REPLACE(#{searchParams.period.startYmd} , '-','') AND REPLACE(#{searchParams.period.endYmd},'-','')
+		</if>
+		<if test="searchCategory != null">
+			<if test="searchCategory == 'date'">
+<!-- 				AND DATE_FORMAT(CREATE_DATE,'%Y%m%d') BETWEEN REPLACE(#{searchParams.period.startYmd} , '-','') AND REPLACE(#{searchParams.period.endYmd},'-','')			</if> -->
+				AND DATE_FORMAT(TTA.CREATE_DATE,'%Y%m%d')BETWEEN #{searchName} AND #{searchName}		
+			</if>
+			<if test="searchCategory == 'store'">
+				AND
+				TTS.SHOP_NAME like CONCAT('%', #{searchName}, '%')
+			</if>
+		
+		</if>
+	</sql>
+	
+	<select id="getArListCount" resultType="int">
+		SELECT
+			count(*)
+		FROM
+			`AVP`.`AVP_AR_TB`
+		WHERE
+			(DEL_YN	=	'N'	OR	DEL_YN	is	NULL)
+		<include refid="whereGetArs"/>
+	</select>
+	
+	<select id="getArList" resultType="com.smartcc.avp.pc.ar.model.response.ArListResponse">
+		SELECT	
+			IDX		as	arId,
+			AR_NM	as	arName,
+			(SELECT ITEM_NM FROM `AVP`.`AVP_ITEM_TB` WHERE IDX = ITEM_ID) as itemName,
+			DATE_FORMAT(CREATE_DTTM,'%Y-%m-%d %H:%i:%s')		as	createDate	
+		FROM
+			`AVP`.`AVP_AR_TB`
+        WHERE
+        	(DEL_YN	=	'N'	OR	DEL_YN	is	NULL)
+		<include refid="whereGetArs"/>
+		ORDER BY IDX DESC
+		<if test="pageInfo != null">
+		LIMIT	#{pageInfo.startRowNum},	#{pageInfo.size}
+		</if>
+	</select>
+	
+	<select id="getArListCountForAdmin" resultType="int">
+		SELECT
+			count(*)
+		FROM
+			`AVP`.`AVP_AR_TB`
+		WHERE
+			COMPANY_ID = #{companyId}
+		AND
+			(DEL_YN	=	'N'	OR	DEL_YN	is	NULL)
+	</select>
+	
+	<select id="getArListForAdmin" resultType="com.smartcc.avp.pc.ar.model.response.ArListResponse">
+		SELECT	
+			IDX		as	arId,
+			AR_NM	as	arName,
+			(SELECT ITEM_NM FROM `AVP`.`AVP_ITEM_TB` WHERE IDX = ITEM_ID) as itemName,
+			DATE_FORMAT(CREATE_DTTM,'%Y-%m-%d %H:%i:%s')		as	createDate	
+		FROM
+			`AVP`.`AVP_AR_TB`
+        WHERE
+        	COMPANY_ID = #{companyId}
+        AND
+        	(DEL_YN	=	'N'	OR	DEL_YN	is	NULL)
+		<include refid="whereGetArs"/>
+		ORDER BY IDX DESC
+		<if test="pageInfo != null">
+		LIMIT	#{pageInfo.startRowNum},	#{pageInfo.size}
+		</if>
+	</select>
+	
+	
+	<select id="getArListCountForSeller" resultType="int">
+		SELECT count(*)
+		FROM	`${dbName}`.`tb_tour_ar`	TTA
+		JOIN	`${dbName}`.`tb_tour_shop`	TTS
+		ON		TTA.SHOP_ID		=	TTS.SHOP_ID
+		WHERE	TTA.CREATE_ID	=	#{userId}
+		<include refid="whereGetArs"/>
+	</select>
+	
+	<select id="getArListForSeller" resultType="com.smartcc.avp.pc.ar.model.response.ArListResponse">
+		SELECT	TTA.TARGET_NAME								as	targetName	,
+				TTA.AR_ID									as	arId		,
+				TTS.SHOP_NAME								as	shopName	,
+				DATE_FORMAT(TTA.CREATE_DATE,'%Y-%m-%d')		as	createDate	
+		FROM	`${dbName}`.`tb_tour_ar`	TTA
+		JOIN	`${dbName}`.`tb_tour_shop`	TTS
+		ON		TTA.SHOP_ID		=	TTS.SHOP_ID
+		WHERE	TTA.CREATE_ID	=	#{userId}
+		<include refid="whereGetArs"/>
+		ORDER BY TTA.AR_ID DESC
+		<if test="pageInfo != null">
+		LIMIT	#{pageInfo.startRowNum},	#{pageInfo.size}
+		</if>
+	</select>
+
+	<select id="arDetailPageNew" resultType="com.smartcc.avp.pc.ar.model.ArInfo">
+		SELECT
+		IDX	as	arId,
+		(SELECT ITEM_NM FROM `AVP`.`AVP_ITEM_TB` AS IT WHERE IT.IDX = ART.ITEM_ID) as	itemName,
+		ART.AR_NM							as	arName,
+		ART.SCRIPT                          as  arScript,
+		(SELECT FILE_SAVE_PATH FROM `AVP`.`AVP_FILE_TB` WHERE FILE_NAME = ART.AR_NM AND FILE_SRC='image') as	arImgUrl,
+		(SELECT FILE_SIZE FROM `AVP`.`AVP_FILE_TB` WHERE FILE_NAME = ART.AR_NM AND FILE_SRC='image') as	arImgSize,
+		(SELECT FILE_SAVE_PATH FROM `AVP`.`AVP_FILE_TB` WHERE FILE_NAME = ART.AR_NM AND FILE_SRC='video') as	arVideoUrl,
+		(SELECT FILE_SIZE FROM `AVP`.`AVP_FILE_TB` WHERE FILE_NAME = ART.AR_NM AND FILE_SRC='video') as	arVideoSize,
+		(SELECT FILE_SAVE_PATH FROM `AVP`.`AVP_FILE_TB` WHERE FILE_NAME = ART.AR_NM AND FILE_SRC='tts') as	arTtsUrl,
+		(SELECT FILE_SIZE FROM `AVP`.`AVP_FILE_TB` WHERE FILE_NAME = ART.AR_NM AND FILE_SRC='tts') as	arTtsSize,
+
+		(SELECT NICK_NAME FROM `AVP`.`AVP_USER_TB` WHERE IDX = ART.CREATE_ID) as	createUser,
+		DATE_FORMAT(CREATE_DTTM, '%Y-%m-%d %H:%i:%s')							as	createDate,
+		(SELECT NICK_NAME FROM `AVP`.`AVP_USER_TB` WHERE IDX = ART.UPDATE_ID) as	updateUser,
+		DATE_FORMAT(UPDATE_DTTM, '%Y-%m-%d %H:%i:%s')							as	updateDate
+		FROM
+		`AVP`.`AVP_AR_TB` AS ART
+		WHERE
+		ART.IDX	=	#{arId};
+	</select>
+	
+	
+	<select id="arDetailPage" resultType="com.smartcc.avp.pc.ar.model.ArInfo">
+		SELECT
+			IDX								as	arId,	
+			(
+				SELECT
+					ITEM_NM
+				FROM
+					`AVP`.`AVP_ITEM_TB`
+				WHERE
+					IDX = ITEM_ID
+			)								as	itemName,
+	        AR_NM							as	arName,
+	        TARGET_ID						as	targetId,
+	        METADATA						as	metaData,
+	        AR_IMG_ID						as	arImgId,
+	        (
+	        	SELECT
+	        		FILE_URL
+	        	FROM
+	        		`AVP`.`AVP_FILE_TB`
+	        	WHERE
+	        		FILE_ID = AR_IMG_ID
+	        ) 								as	arImgUrl,
+	        IMG_SIZE						as	arSize,
+	        RECOG_IMG_ID					as	recogImgId,
+	        (
+		        SELECT
+		        	FILE_URL
+		        FROM
+		        	`AVP`.`AVP_FILE_TB`
+		        WHERE
+		        	FILE_ID = RECOG_IMG_ID
+	        ) 								as	recogImgUrl,
+	        (
+		        SELECT
+		        	NICK_NAME
+		        FROM
+		        	`AVP`.`AVP_USER_TB`
+		        WHERE
+		        	IDX = CREATE_ID
+	        )								as	createUser,
+	        DATE_FORMAT(CREATE_DTTM, '%Y-%m-%d %H:%i:%s')							as	createDate,
+	        (
+		        SELECT
+			        NICK_NAME
+		        FROM
+			        `AVP`.`AVP_USER_TB`
+		        WHERE
+		        	IDX = UPDATE_ID
+	        )								as	updateUser,
+	        DATE_FORMAT(UPDATE_DTTM, '%Y-%m-%d %H:%i:%s')							as	updateDate
+		FROM
+			`AVP`.`AVP_AR_TB`
+		WHERE
+			IDX	=	#{arId};	
+	</select>
+	
+	<update id="updateAr">
+		UPDATE `AVP`.`AVP_AR_TB`	SET
+			AR_NM			=	#{arUpdate.arName}					,
+			METADATA		=	#{arUpdate.metaData}				,
+			IMG_SIZE		=	#{arUpdate.arSize}					,
+			AR_IMG_ID		=	#{arUpdate.arImgId}					,
+			RECOG_IMG_ID	=	#{arUpdate.recogImgId}				,
+			UPDATE_DTTM		=	DATE_FORMAT(NOW(),'%Y%m%d%H%i%s')	,	
+			UPDATE_ID		=	#{arUpdate.updateId}				,
+			SCRIPT          =   #{}
+		WHERE IDX			=	#{arUpdate.arId}
+	</update>
+
+
+<!--	<update id="updateArNew">-->
+<!--		UPDATE `AVP`.`AVP_AR_TB`	SET-->
+<!--		AR_NM			=	#{arInfo.arName}					,-->
+<!--		AR_IMG_ID		=	#{arInfo.arImgId}					,-->
+<!--		UPDATE_DTTM		=	DATE_FORMAT(NOW(),'%Y%m%d%H%i%s')	,-->
+<!--		UPDATE_ID		=	#{arInfo.updateId}				,-->
+<!--		SCRIPT          =   #{arInfo.arScript}-->
+<!--		WHERE IDX			=	#{arInfo.arId}-->
+<!--	</update>-->
+
+	<!-- <update id="deleteAr">
+		UPDATE
+			`AVP`.`AVP_AR_TB`
+		SET
+			DEL_ID = #{userId},
+			DEL_YN = 'Y'
+		WHERE
+			IDX	=	#{arId}
+	</update> -->
+	
+	<delete id="deleteAr">
+		DELETE FROM
+			`AVP`.`AVP_AR_TB`
+		WHERE
+			IDX	=	#{arId}
+	</delete>
+	
+	<select id="checkArFromAdmin" resultType="int">
+		SELECT COUNT(*)
+		FROM `${dbName}`.`tb_tour_ar`
+		WHERE	AR_ID	=	#{arId}	
+		AND	SHOP_ID	in	(SELECT SHOP_ID FROM	`${dbName}`.`tb_tour_shop`	WHERE COMPANY_ID	=	#{companyId})
+	</select>
+	<select id="checkArFromSeller" resultType="int">
+		SELECT COUNT(*)
+		FROM `${dbName}`.`tb_tour_ar`
+		WHERE	CREATE_ID	=	#{userId}	AND	AR_ID	=	#{arId}	
+	</select>
+	
+	<delete id="deleteArArr">
+		DELETE	FROM `${dbName}`.`tb_tour_ar`
+		WHERE	AR_ID	IN
+			<foreach collection="list" item="item" index="index" separator="," open="(" close=")">
+				#{item}
+			</foreach>
+	</delete>
+	
+	<insert id="insertArCount" useGeneratedKeys="true">
+		INSERT	INTO	`AVP`.`AVP_AR_RECO_TB`
+			(
+				COMPANY_ID		,
+				DEVICE_ID
+			)
+		VALUES
+			(
+				#{insertArCount.body.companyId},
+				#{insertArCount.body.deviceId}
+			)
+	</insert>
+	
+	<select id="getArCount" resultType="int">
+		SELECT COUNT(COMPANY_ID)
+		FROM `AVP`.`AVP_AR_RECO_TB`
+		WHERE	COMPANY_ID	=	#{companyId}	
+	</select>
+	
+</mapper>
