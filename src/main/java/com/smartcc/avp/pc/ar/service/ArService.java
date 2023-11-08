@@ -22,7 +22,7 @@ public interface ArService {
 	ArInfo arDetailPageNew(String tableName, int arId) throws Exception;
 
 	int updateAr(String tableName, ArUpdatePageRequest req) throws Exception;
-/*	int updateArNew(String tableName, ArInfo req) throws Exception;*/
+	int updateArNew(String tableName, ArInfo req) throws Exception;
 
 	int deleteAr(String tableName, Integer arId, Integer userId) throws Exception;
 

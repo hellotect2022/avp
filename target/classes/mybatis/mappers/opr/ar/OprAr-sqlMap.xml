@@ -230,20 +230,19 @@
 			RECOG_IMG_ID	=	#{arUpdate.recogImgId}				,
 			UPDATE_DTTM		=	DATE_FORMAT(NOW(),'%Y%m%d%H%i%s')	,	
 			UPDATE_ID		=	#{arUpdate.updateId}				,
-			SCRIPT          =   #{}
 		WHERE IDX			=	#{arUpdate.arId}
 	</update>
 
 
-<!--	<update id="updateArNew">-->
-<!--		UPDATE `AVP`.`AVP_AR_TB`	SET-->
-<!--		AR_NM			=	#{arInfo.arName}					,-->
-<!--		AR_IMG_ID		=	#{arInfo.arImgId}					,-->
-<!--		UPDATE_DTTM		=	DATE_FORMAT(NOW(),'%Y%m%d%H%i%s')	,-->
-<!--		UPDATE_ID		=	#{arInfo.updateId}				,-->
-<!--		SCRIPT          =   #{arInfo.arScript}-->
-<!--		WHERE IDX			=	#{arInfo.arId}-->
-<!--	</update>-->
+	<update id="updateArNew">
+		UPDATE `AVP`.`AVP_AR_TB`	SET
+		AR_NM			=	#{arInfo.arName}					,
+		AR_IMG_ID		=	#{arInfo.arImgId}					,
+		UPDATE_DTTM		=	DATE_FORMAT(NOW(),'%Y%m%d%H%i%s')	,
+		UPDATE_ID		=	#{arInfo.updateId}				,
+		SCRIPT          =   #{arInfo.arScript}
+		WHERE IDX			=	#{arInfo.arId}
+	</update>
 
 	<!-- <update id="deleteAr">
 		UPDATE

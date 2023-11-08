@@ -10,9 +10,9 @@ import com.smartcc.avp.common.model.ApiException;
 public interface FileService {
 
 //	@Transactional
-//	int fileCheck(FileData fileData) throws Exception;
-//
-//	int updateFile(FileData fileData) throws Exception;
+	int fileCheck(FileData fileData) throws Exception;
+
+	int updateFile(FileData fileData) throws Exception;
 	FileData fileUpload(MultipartFile fileData, Integer userId) throws Exception;
 
 	FileData fileUploadNotInsert(MultipartFile fileData, Integer userId) throws Exception;
@@ -34,5 +34,7 @@ public interface FileService {
 	long getMyUsedSize(Integer userId) throws Exception;
 
 	FileData getFileByName(String fileName) throws Exception;
+
+	List<FileData> getFileList() throws Exception;
 
 }

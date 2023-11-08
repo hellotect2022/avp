@@ -61,15 +61,15 @@ public class FileServiceImpl implements FileService {
 	@Value("#{config['upload.image.user.path']}")
 	private String UPLOAD_IMAGE_USER_PATH;
 
-//	@Override
-//	public int fileCheck(FileData fileData) throws Exception {
-//		return fileDAO.checkFile(fileData);
-//	}
-//
-//	@Override
-//	public int updateFile(FileData fileData) throws Exception {
-//		return fileDAO.updateFile(fileData);
-//	}
+	@Override
+	public int fileCheck(FileData fileData) throws Exception {
+		return fileDAO.checkFile(fileData);
+	}
+
+	@Override
+	public int updateFile(FileData fileData) throws Exception {
+		return fileDAO.updateFile(fileData);
+	}
 
 	@Override
 //	@Transactional
@@ -309,6 +309,11 @@ public class FileServiceImpl implements FileService {
 	@Override
 	public FileData getFileByName(String fileName) throws Exception {
 		return fileDAO.getFileByName(fileName);
+	}
+
+	@Override
+	public List<FileData> getFileList() throws Exception {
+		return fileDAO.getFileList();
 	}
 
 }

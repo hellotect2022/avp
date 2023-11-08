@@ -44,7 +44,7 @@ public interface ArDAO {
 	ArInfo arDetailPageNew(@Param("dbName") String tableName, @Param("arId") int arId) throws Exception;
 
 	int updateAr(@Param("dbName") String tableName, @Param("arUpdate") ArUpdatePageRequest req) throws Exception;
-//	int updateArNew(@Param("dbName") String tableName, @Param("arInfo") ArInfo dto) throws Exception;
+	int updateArNew(@Param("dbName") String tableName, @Param("arInfo") ArInfo dto) throws Exception;
 
 	public int deleteAr(@Param("dbName") String tableName, @Param("arId") Integer arId, @Param("userId") Integer userId) throws Exception;
 

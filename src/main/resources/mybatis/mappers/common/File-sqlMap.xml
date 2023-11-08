@@ -4,26 +4,26 @@
 <mapper namespace="com.smartcc.avp.common.file.dao.FileDAO">
 
 
-<!--	<insert id="checkFile" useGeneratedKeys="true" keyProperty="fileId">-->
-<!--		SELECT COUNT(*) FROM `AVP`.`AVP_FILE_TB`-->
-<!--		WHERE FILE_NAME = #{fileName}-->
-<!--		AND FILE_SRC = #{fileSrc}-->
-<!--	</insert>-->
+	<insert id="checkFile" useGeneratedKeys="true" keyProperty="fileId">
+		SELECT COUNT(*) FROM `AVP`.`AVP_FILE_TB`
+		WHERE FILE_NAME = #{fileName}
+		AND FILE_SRC = #{fileSrc}
+	</insert>
 
-<!--	<update id="updateFile" useGeneratedKeys="true" keyProperty="fileId">-->
-<!--		UPDATE `AVP`.`AVP_FILE_TB`-->
-<!--		SET FILE_NAME = #{fileName}-->
-<!--		, ORIGINAL_FILE_NAME = #{originalFileName}-->
-<!--		,FILE_SIZE = #{fileSize}-->
-<!--		,FILE_SAVE_PATH = #{fileSavePath}-->
-<!--		,FILE_URL = #{fileUrl}-->
-<!--		,CREATE_ID	 = #{userId}-->
-<!--		,CREATE_TIME = DATE_FORMAT(NOW(),'%Y%m%d%H%i%s')-->
-<!--		,FILE_SRC = #{fileSrc}-->
-<!--		WHERE 1=1-->
-<!--		AND FILE_NAME = #{fileName}-->
-<!--		AND FILE_SRC = #{fileSrc}-->
-<!--	</update>-->
+	<update id="updateFile" useGeneratedKeys="true" keyProperty="fileId">
+		UPDATE `AVP`.`AVP_FILE_TB`
+		SET FILE_NAME = #{fileName}
+		, ORIGINAL_FILE_NAME = #{originalFileName}
+		,FILE_SIZE = #{fileSize}
+		,FILE_SAVE_PATH = #{fileSavePath}
+		,FILE_URL = #{fileUrl}
+		,CREATE_ID	 = #{userId}
+		,CREATE_TIME = DATE_FORMAT(NOW(),'%Y%m%d%H%i%s')
+		,FILE_SRC = #{fileSrc}
+		WHERE 1=1
+		AND FILE_NAME = #{fileName}
+		AND FILE_SRC = #{fileSrc}
+	</update>
 
 	<insert id="insertFile" useGeneratedKeys="true" keyProperty="fileId">
 	INSERT INTO `AVP`.`AVP_FILE_TB`
@@ -90,6 +90,19 @@
 		   FILE_SIZE	as	fileSize
 	FROM	`AVP`.`AVP_FILE_TB`
 	WHERE 	FILE_NAME	=	#{fileName}
+	</select>
+
+	<select id="getFileList" resultType="com.smartcc.avp.common.FileData">
+		SELECT
+		FILE_ID as	fileId,
+		FILE_NAME as fileName,
+		ORIGINAL_FILE_NAME as originalFileName,
+		FILE_URL as fileUrl,
+		FILE_SIZE as fileSize,
+		FILE_SAVE_PATH as fileSavePath,
+		CREATE_TIME as createTime,
+		FILE_SRC as fileSrc
+		FROM AVP.AVP_FILE_TB
 	</select>
 	
 </mapper>

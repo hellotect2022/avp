@@ -78,10 +78,10 @@ public class ArServiceImpl implements ArService {
 		return arDao.updateAr(tableName, req);
 	}
 
-/*	@Override
+	@Override
 	public int updateArNew(String tableName, ArInfo req) throws Exception {
 		return arDao.updateArNew(tableName, req);
-	}*/
+	}
 
 	@Override
 	public int deleteAr(String tableName, Integer arId, Integer userId) throws Exception {

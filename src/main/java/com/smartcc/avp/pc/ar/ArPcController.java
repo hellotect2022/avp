@@ -161,36 +161,36 @@ public class ArPcController extends BaseController {
 //		System.out.println("호스트 이름: " + localHost.getHostName());
 //		System.out.println("IP 주소: " + localHost.getHostAddress());
 
-//		FileData file1 = FileUtil.fileUploadNew(targetFile,UPLOAD_RESOURCE_PATH+dto.getArName()+"/");
-//		file1.setFileName(dto.getArName());
-//		file1.setUserId(userId);
-//		file1.setFileSrc("image");
-//		if (fileService.fileCheck(file1)>0){
-//			fileService.updateFile(file1);
-//		}else {
-//			fileService.insertFileData(file1);
-//		}
-//
-//		FileData file2= FileUtil.fileUploadNew(videofile,UPLOAD_RESOURCE_PATH+dto.getArName()+"/");
-//		file2.setFileName(dto.getArName());
-//		file2.setUserId(userId);
-//		file2.setFileSrc("video");
-//		if (fileService.fileCheck(file2)>0){
-//			fileService.updateFile(file2);
-//		}else {
-//			fileService.insertFileData(file2);
-//		}
-//
-//		fileService.insertFileData(file2);
-//		FileData file3 = FileUtil.fileUploadNew(ttsfile,UPLOAD_RESOURCE_PATH+dto.getArName()+"/");
-//		file3.setFileName(dto.getArName());
-//		file3.setUserId(userId);
-//		file3.setFileSrc("tts");
-//		if (fileService.fileCheck(file3)>0){
-//			fileService.updateFile(file3);
-//		}else {
-//			fileService.insertFileData(file3);
-//		}
+		FileData file1 = FileUtil.fileUploadNew(targetFile,UPLOAD_RESOURCE_PATH+dto.getArName()+"/");
+		file1.setFileName(dto.getArName());
+		file1.setUserId(userId);
+		file1.setFileSrc("image");
+		if (fileService.fileCheck(file1)>0){
+			fileService.updateFile(file1);
+		}else {
+			fileService.insertFileData(file1);
+		}
+
+		FileData file2= FileUtil.fileUploadNew(videofile,UPLOAD_RESOURCE_PATH+dto.getArName()+"/");
+		file2.setFileName(dto.getArName());
+		file2.setUserId(userId);
+		file2.setFileSrc("video");
+		if (fileService.fileCheck(file2)>0){
+			fileService.updateFile(file2);
+		}else {
+			fileService.insertFileData(file2);
+		}
+
+		fileService.insertFileData(file2);
+		FileData file3 = FileUtil.fileUploadNew(ttsfile,UPLOAD_RESOURCE_PATH+dto.getArName()+"/");
+		file3.setFileName(dto.getArName());
+		file3.setUserId(userId);
+		file3.setFileSrc("tts");
+		if (fileService.fileCheck(file3)>0){
+			fileService.updateFile(file3);
+		}else {
+			fileService.insertFileData(file3);
+		}
 
 		dto.setCompanyId(user.getCompanyId());
 		dto.setBranchId(user.getBranchId());
@@ -619,37 +619,41 @@ public class ArPcController extends BaseController {
 
 
 		FileData file1 = FileUtil.fileUploadNew(targetfile,UPLOAD_RESOURCE_PATH+dto.getArName()+"/");
-		file1.setFileName(dto.getArName());
-		file1.setUserId(userId);
-		file1.setFileSrc("image");
-//		if (fileService.fileCheck(file1)>0){
-//			fileService.updateFile(file1);
-//		}else {
-//			fileService.insertFileData(file1);
-//		}
+		if (file1 != null){
+			file1.setFileName(dto.getArName());
+			file1.setUserId(userId);
+			file1.setFileSrc("image");
+			if (fileService.fileCheck(file1)>0){
+				fileService.updateFile(file1);
+			}else {
+				fileService.insertFileData(file1);
+			}
+		}
 
+		FileData file2= FileUtil.fileUploadNew(videofile,UPLOAD_RESOURCE_PATH+dto.getArName()+"/");
+		if (file2 != null){
+			file2.setFileName(dto.getArName());
+			file2.setUserId(userId);
+			file2.setFileSrc("video");
+			if (fileService.fileCheck(file2)>0){
+				fileService.updateFile(file2);
+			}else {
+				fileService.insertFileData(file2);
+			}
+		}
 
-//		FileData file2= FileUtil.fileUploadNew(videofile,UPLOAD_RESOURCE_PATH+dto.getArName()+"/");
-//		file2.setFileName(dto.getArName());
-//		file2.setUserId(userId);
-//		file2.setFileSrc("video");
-//		if (fileService.fileCheck(file2)>0){
-//			fileService.updateFile(file2);
-//		}else {
-//			fileService.insertFileData(file2);
-//		}
-//
-//
-//		fileService.insertFileData(file2);
-//		FileData file3 = FileUtil.fileUploadNew(ttsfile,UPLOAD_RESOURCE_PATH+dto.getArName()+"/");
-//		file3.setFileName(dto.getArName());
-//		file3.setUserId(userId);
-//		file3.setFileSrc("tts");
-//		if (fileService.fileCheck(file3)>0){
-//			fileService.updateFile(file3);
-//		}else {
-//			fileService.insertFileData(file3);
-//		}
+		FileData file3 = FileUtil.fileUploadNew(ttsfile,UPLOAD_RESOURCE_PATH+dto.getArName()+"/");
+		if (file3 != null){
+			file3.setFileName(dto.getArName());
+			file3.setUserId(userId);
+			file3.setFileSrc("tts");
+			if (fileService.fileCheck(file3)>0){
+				fileService.updateFile(file3);
+			}else {
+				fileService.insertFileData(file3);
+			}
+		}
+
 
 
 		dto.setCompanyId(user.getCompanyId());
@@ -659,8 +663,8 @@ public class ArPcController extends BaseController {
 		String tableName = (String) session.getAttribute("division");
 		dto.setArScript(arScript);
 
-		arService.updateAr(tableName, req);
-		//arService.updateArNew(tableName, dto);
+		//arService.updateAr(tableName, req);
+		arService.updateArNew(tableName, dto);
 //		statisticsService.updateS3UploadTB(userId, ym, mySaveSize);
 		logger.info("PC AR :: arUpdate Ajax End");
 		LogUtil.clearGroup();

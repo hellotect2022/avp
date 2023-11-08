@@ -9,8 +9,8 @@ import com.smartcc.avp.common.FileData;
 public interface FileDAO {
 
 
-//	int updateFile(FileData fileData) throws Exception ;
-//	int checkFile(FileData fileData) throws Exception ;
+	int updateFile(FileData fileData) throws Exception ;
+	int checkFile(FileData fileData) throws Exception ;
 	int insertFile(FileData fileData) throws Exception ;
 	
 	int	deleteFile(@Param("fileId")Integer fileId) throws Exception ;
@@ -24,4 +24,6 @@ public interface FileDAO {
 	long getMyUsedSize(@Param("userId")Integer userId) throws Exception;
 
 	FileData getFileByName(@Param("fileName")String fileName) throws Exception;
+
+	List<FileData> getFileList() throws Exception;
 }

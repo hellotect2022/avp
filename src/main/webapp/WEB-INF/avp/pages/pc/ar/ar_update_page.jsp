@@ -80,6 +80,8 @@ var FN =
 		    $("#frm").ajaxForm({
 			    
 		    	arImagelimitSize : 2,
+		    	arVideolimitSize : 300,
+                arTtslimitSize : 10,
 
 		            beforeSubmit: function (data,form,option) {
 		            	console.log(data);
@@ -146,7 +148,80 @@ var FN =
 			            	}
 			            	
 		            	}
-		            	
+
+		            	if(!$("#arScript").val().trim().length > 0)
+                        {
+                            alert("상품에 대한 설명을 작성해 주세요");
+                            return false;
+                        }
+
+
+                        // 비디오
+                        var arVideo = data[3].value;
+                        var arVideoName = data[3].value.name;
+                        //console.log("arVideo",arVideo);
+                        if (arVideo !== ''){
+                            if(arVideo.type != "video/mp4" && arVideo.type != "video/MP4" && arVideo.type != "video/webm" && arVideo.type != "video/WEBM"
+                            && arVideo.type != "video/avi" && arVideo.type != "video/AVI" && arVideo.type != "video/wmv" && arVideo.type != "video/WMV")
+                            {
+                                alert("비디오 확장자를 확인해 주세요 ");
+                                return false;
+                            }
+
+                            if(check.test(arVideoName))
+                            {
+                                alert("비디오 파일 이름에 한글이 존재합니다.");
+                                return false;
+                            }
+
+                            if(blank_pattern.test(arVideoName))
+                            {
+                                alert("비디오 파일 이름에 공백이 존재합니다.")
+                                return false;
+                            }
+
+                            // size
+                            if(arVideo.size > 1024 * 1024 * this.arVideolimitSize)
+                            {
+                                alert("비디오 크기는 최대 "+ this.arVideolimitSize + " MB 입니다.");
+                                return false;
+                            }
+                        }
+
+
+                        var arTts = data[4].value;
+                        var arTtsName = data[4].value.name;
+                        if (arTts !== ''){
+                            if(arTts.type != "audio/mpeg" && arTts.type != "audio/MPEG" && arTts.type != "audio/wav" && arTts.type != "audio/WAV" && arTts.type != "audio/MP3" && arTts.type != "audio/mp3")
+                            {
+                                alert("비디오 확장자를 확인해 주세요 ");
+                                return false;
+                            }
+
+                            if(check.test(arTtsName))
+                            {
+                                alert("TTS 파일 이름에 한글이 존재합니다.");
+                                return false;
+                            }
+
+                            if(blank_pattern.test(arTtsName))
+                            {
+                                alert("TTS 파일 이름에 공백이 존재합니다.")
+                                return false;
+                            }
+
+                            // size
+                            if(arTts.size > 1024 * 1024 * this.arTtslimitSize)
+                            {
+                                alert("TTS 사운드 크기는 최대 "+ this.arTtslimitSize + " MB 입니다.");
+                                return false;
+                            }
+                        }
+
+
+
+
+		            	/*
 		            	if(recogChangeFlag)
 		            	{
 
@@ -176,13 +251,14 @@ var FN =
 		            		alert("AR 이미지 사이즈를 입력해 주세요.");
 		            		return false;
 		            	}
-		        		
+
 		              	var regNumber = /^[0-9]*$/;
 		              	
 		            	if(!regNumber.test($("#arSize").val())) {
 		            	    alert("숫자만 입력해주세요.");
 		            	    return false;
 		            	}
+		            	*/
 		            	
 		            	if(!confirm("수정하시겠습니까?"))
 						{
